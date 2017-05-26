@@ -1,0 +1,12 @@
+*
+!.gitignore
+!cache.c
+!LICENSE
+!README.md
+!callin.h
+!cdzf.h
+!config.m4
+!libcache.so
+!php_cache.h
+!test.php
+!include/*
