@@ -42,14 +42,22 @@ zend_module_entry cache_module_entry = {
 
 ZEND_GET_MODULE(cache)
 
-static PHP_INI_MH(onActivateChange)
-{
-  zend_bool val = atoi(new_value);
-}
+#if ZEND_MODULE_API_NO <= 20131226
+#define _RETURN_STRING(str) RETURN_STRING(str, 0)
+#else
+#define _RETURN_STRING(str) RETURN_STRING(str)
+#endif
+
+#if ZEND_MODULE_API_NO <= 20131226
+typedef long zend_long;
+typedef int strsize_t;
+#else
+typedef size_t strsize_t;
+#endif
 
 PHP_INI_BEGIN()
-PHP_INI_ENTRY("cache.test", "14", PHP_INI_ALL, onActivateChange) // FIX THIS
-PHP_INI_ENTRY("cache.shdir", "/usr/lib/abadon/mgr", PHP_INI_ALL, NULL) // and this
+PHP_INI_ENTRY("cache.test", "14", PHP_INI_ALL, NULL) // FIX THIS
+PHP_INI_ENTRY("cache.shdir", "/usr/lib/abadon/mgr", PHP_INI_ALL, NULL) // AND THIS
 PHP_INI_END()
 
 PHP_MINIT_FUNCTION(cache)
@@ -66,7 +74,8 @@ PHP_MSHUTDOWN_FUNCTION(cache)
 
 PHP_FUNCTION(cach_set_dir)
 {
-	int cparams, temp = 0;
+	strsize_t cparams;
+	int temp = 0;
 	char *path;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &path, &cparams) == FAILURE) { 
 		temp = BRIDGE_INVALID_PARAMETERS;
@@ -77,8 +86,8 @@ PHP_FUNCTION(cach_set_dir)
 
 PHP_FUNCTION(cach_connect)
 {
-	zval **args[3];
-	int	username_len, password_len, argument_count, res = 0, tout = 0;
+	strsize_t argument_count, username_len, password_len;
+	int res = 0, tout = 0;
 	char *username, *password;
 	CACHE_STR pusername, ppassword, pexename;
 	if (zend_parse_parameters(2, "ss|", 
@@ -97,19 +106,35 @@ PHP_FUNCTION(cach_connect)
 			ppassword.len = password_len;
 
 			if (3 == argument_count) {  
-				if(zend_get_parameters_array_ex(argument_count, args) != SUCCESS) {
-					res = BRIDGE_INVALID_PARAMETERS;
-				} else {
-					if (PZVAL_IS_REF(*args[2])) {
+
+				#if ZEND_MODULE_API_NO <= 20131226
+					zval **args[3];
+					if(zend_get_parameters_array_ex(argument_count, args) != SUCCESS) {
 						res = BRIDGE_INVALID_PARAMETERS;
 					} else {
-						if(IS_LONG == Z_TYPE_P(*args[2])) {
-							tout = Z_LVAL_P(*args[2]);
+						if (PZVAL_IS_REF(*args[2])) {
+							res = BRIDGE_INVALID_PARAMETERS;
+						} else {
+							if(IS_LONG == Z_TYPE_P(*args[2])) {
+								tout = Z_LVAL_P(*args[2]);
+							} else {
+								res = BRIDGE_INVALID_PARAMETERS;
+							}
+						}
+					}				
+				#else
+					zval args[3];
+					if(zend_get_parameters_array_ex(argument_count, args) != SUCCESS) {
+						res = BRIDGE_INVALID_PARAMETERS;
+					} else {
+						if(IS_LONG == Z_TYPE(args[2])) {
+							tout = Z_LVAL(args[2]);
 						} else {
 							res = BRIDGE_INVALID_PARAMETERS;
 						}
 					}
-				}
+				#endif
+
 			}
 			if (0 == res) {
 				res = CacheSecureStart(&pusername,&ppassword,&pexename,CACHE_TTNONE,tout,NULL,NULL);
@@ -135,9 +160,11 @@ static int __push_zval(zval* value)
 			res = NULL_EXCEPTION;
 			break;
 
-		case IS_BOOL:
-			res = CachePushInt(Z_LVAL_P(value));
-			break;
+		#if ZEND_MODULE_API_NO <= 20131226
+			case IS_BOOL:
+				res = CachePushInt(Z_LVAL_P(value));
+				break;
+		#endif
 
 		case IS_LONG:
 			res = CachePushInt64(Z_LVAL_P(value));
@@ -160,30 +187,47 @@ static int __push_zval(zval* value)
 
 static int __push_pp_global(int argument_count)
 {
-	zval **args[12];
 	char *name;
-	int name_len, res;
+	strsize_t name_len;
+	int res;
 	if (zend_parse_parameters(1, "s|", &name, &name_len) == FAILURE) { 
 		res = BRIDGE_INVALID_PARAMETERS;
 	} else {
 		if (1 > argument_count || 12 < argument_count) {
 			res = WRONG_PARAMS_COUNT;
 		} else {
-			if(zend_get_parameters_array_ex(argument_count, args) != SUCCESS) {
-				res = BRIDGE_INVALID_PARAMETERS;
-			} else {
-				if (!(res = CachePushGlobal(name_len,name))) {
-					int counter;
-					for (counter = 1; counter < argument_count; counter++) {
-						if (PZVAL_IS_REF(*args[counter])) {
-							res = BRIDGE_INVALID_PARAMETERS;
-							break;
-						} else {
-							if(res = __push_zval(*args[counter])) break;
+			#if ZEND_MODULE_API_NO <= 20131226
+				zval ***args[12];
+				if(zend_get_parameters_array_ex(argument_count, args) != SUCCESS) {
+					res = BRIDGE_INVALID_PARAMETERS;
+				} else {
+					if (!(res = CachePushGlobal(name_len,name))) {
+
+						int counter;
+						for (counter = 1; counter < argument_count; counter++) {
+							if (PZVAL_IS_REF(*args[counter])) {
+								res = BRIDGE_INVALID_PARAMETERS;
+								break;
+							} else {
+								if(res = __push_zval(*args[counter])) break;
+							}
 						}
 					}
 				}
-			}
+			#else
+				zval args[12];
+				if(zend_get_parameters_array_ex(argument_count, args) != SUCCESS) {
+					res = BRIDGE_INVALID_PARAMETERS;
+				} else {
+					if (!(res = CachePushGlobal(name_len,name))) {
+						int counter;
+						for (counter = 1; counter < argument_count; counter++) {
+							if(res = __push_zval(&args[counter])) break;
+						}
+					}
+				}
+			#endif
+
 		}
 	}
 	return res;
@@ -226,7 +270,7 @@ PHP_FUNCTION(cach_get)
 				case CACHE_WSTRING:
 					res = CachePopStr(&iTemp, &sPTemp);
 					sPTemp[iTemp]='\0';
-					RETURN_STRING(sPTemp, 1);
+					RETURN_STRING(sPTemp);
 					break;
 
 				default:
@@ -289,7 +333,7 @@ PHP_FUNCTION(cach_order)
 					case CACHE_WSTRING:
 						res = CachePopStr(&iTemp, &sPTemp);
 						sPTemp[iTemp]='\0';
-						RETURN_STRING(sPTemp, 1);
+						RETURN_STRING(sPTemp);
 						break;
 
 					default:
@@ -330,7 +374,7 @@ PHP_FUNCTION(cach_order_rev)
 					case CACHE_WSTRING:
 						res = CachePopStr(&iTemp, &sPTemp);
 						sPTemp[iTemp]='\0';
-						RETURN_STRING(sPTemp, 1);
+						RETURN_STRING(sPTemp);
 						break;
 
 					default:

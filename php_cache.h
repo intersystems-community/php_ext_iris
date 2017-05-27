@@ -1,5 +1,5 @@
-#define PHP_CACHE_VERSION "0.1"
-#define PHP_CACHE_EXT_NAME "cache"
+#define PHP_CACHE_VERSION "0.2"
+#define PHP_CACHE_EXT_NAME "cache_ext"
 
 PHP_MINIT_FUNCTION(cache);
 PHP_MSHUTDOWN_FUNCTION(cache);

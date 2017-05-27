@@ -1,10 +1,11 @@
 <?php
 	/*
 	ini_set('cache.shdir','/usr/lib/abadon/mgr');
+	echo ini_get('cache.shdir');
 	*/
+	//echo phpinfo();
 	echo cach_set_dir('/usr/lib/abadon/mgr'),"\n";//Fix this
 	echo cach_connect('test','test'),"\n";
-	echo cach_set('forKill','global','value'),"\n";
 	echo cach_set('forKill','tree',1,1,'value'),"\n";
 	echo cach_set('forKill','tree',1,2,'value'),"\n";
 	echo cach_set('forKill','tree',1,3,'value'),"\n";
@@ -35,5 +36,4 @@
 		echo $i,"\n";
 		$i = cach_order('ccc',$i);
 	}
-	//echo phpinfo();
 ?>
