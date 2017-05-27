@@ -6,10 +6,12 @@ PHP_MSHUTDOWN_FUNCTION(cache);
 PHP_FUNCTION(cach_set_dir);
 PHP_FUNCTION(cach_connect);
 PHP_FUNCTION(cach_quit);
-PHP_FUNCTION(cach_global_set);
-PHP_FUNCTION(cach_global_get);
-PHP_FUNCTION(cach_global_kill);
-PHP_FUNCTION(cach_global_order);
+PHP_FUNCTION(cach_set);
+PHP_FUNCTION(cach_get);
+PHP_FUNCTION(cach_kill);
+PHP_FUNCTION(cach_kill_tree);
+PHP_FUNCTION(cach_order);
+PHP_FUNCTION(cach_order_rev);
 PHP_FUNCTION(test);
 
 #define BRIDGE_INVALID_PARAMETERS  -101

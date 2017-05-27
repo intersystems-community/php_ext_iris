@@ -13,10 +13,12 @@ const zend_function_entry cache_functions[] = {
 	PHP_FE(cach_set_dir, NULL)
 	PHP_FE(cach_connect, NULL)
 	PHP_FE(cach_quit, NULL)
-	PHP_FE(cach_global_set, NULL)
-	PHP_FE(cach_global_get,NULL)
-	PHP_FE(cach_global_kill, NULL)
-	PHP_FE(cach_global_order, NULL)
+	PHP_FE(cach_set, NULL)
+	PHP_FE(cach_get,NULL)
+	PHP_FE(cach_kill, NULL)
+	PHP_FE(cach_kill_tree,NULL)
+	PHP_FE(cach_order, NULL)
+	PHP_FE(cach_order_rev, NULL)
 	PHP_FE(test, NULL)
 	PHP_FE_END
 };
@@ -53,13 +55,13 @@ PHP_INI_END()
 PHP_MINIT_FUNCTION(cache)
 {
 	REGISTER_INI_ENTRIES();
-	return CacheSetDir(INI_STR("cache.shdir"));
+	CacheSetDir(INI_STR("cache.shdir"));
 }
 
 PHP_MSHUTDOWN_FUNCTION(cache)
 {
 	UNREGISTER_INI_ENTRIES();
-	return CacheEnd();
+	CacheEnd();
 }
 
 PHP_FUNCTION(cach_set_dir)
@@ -70,7 +72,7 @@ PHP_FUNCTION(cach_set_dir)
 		temp = BRIDGE_INVALID_PARAMETERS;
 	}
 	if (0 == temp) temp = CacheSetDir(path);
-	RETURN_LONG(temp);
+	RETURN_LONG(0 == temp);
 }
 
 PHP_FUNCTION(cach_connect)
@@ -116,13 +118,13 @@ PHP_FUNCTION(cach_connect)
 			res = WRONG_PARAMS_COUNT;
 		}
 	}
-	RETURN_LONG(res);
+	RETURN_LONG(0 == res);
 }
 
 PHP_FUNCTION(cach_quit)
 {
 	int con_res = CacheEnd();
-	RETURN_LONG(con_res);
+	RETURN_LONG(0 == con_res);
 }
 
 static int __push_zval(zval* value)
@@ -187,14 +189,17 @@ static int __push_pp_global(int argument_count)
 	return res;
 }
 
-PHP_FUNCTION(cach_global_set)
+PHP_FUNCTION(cach_set)
 {
-	int res = __push_pp_global(ZEND_NUM_ARGS());
-	if (0 == res) res = CacheGlobalSet(ZEND_NUM_ARGS()-2);
-	RETURN_LONG(res);
+	int res = -1;
+	if (1 < ZEND_NUM_ARGS()) {
+		res = __push_pp_global(ZEND_NUM_ARGS());
+		if (0 == res) res = CacheGlobalSet(ZEND_NUM_ARGS()-2);
+	}
+	RETURN_LONG(0 == res);
 }
 
-PHP_FUNCTION(cach_global_get)
+PHP_FUNCTION(cach_get)
 {
 	int flag = 1, res = __push_pp_global(ZEND_NUM_ARGS());
 	if (0 == res) {
@@ -209,7 +214,7 @@ PHP_FUNCTION(cach_global_get)
 					RETURN_LONG(iTemp);
 					break;
 
-				case CACHE_IEEE_DBL: //Function "CachePopDbl" is missing
+				case CACHE_IEEE_DBL: //Function "CachePopIEEEDbl" is missing
 					/* fall-through */
 				case CACHE_DOUBLE:
 					res = CachePopDbl(&dTemp);
@@ -230,89 +235,111 @@ PHP_FUNCTION(cach_global_get)
 			}
 		}
 	}
-	RETURN_LONG(res);
+	RETURN_LONG(0 == res);
 }
 
-PHP_FUNCTION(cach_global_kill)
+PHP_FUNCTION(cach_kill)
 {
-	zval **args[12];
-	int flag = 1, res = 0;
+	int res = 0;
 	int argc = ZEND_NUM_ARGS();
-	if (12 >= argc) {
-		res = __push_pp_global(argc-1);
+		res = __push_pp_global(argc);
 		if (0 == res) {
-			if(zend_get_parameters_array_ex(argc, args) != SUCCESS) {
-				res = BRIDGE_INVALID_PARAMETERS;
-			} else {
-				argc--;
-				if (PZVAL_IS_REF(*args[argc])) {
-					res = BRIDGE_INVALID_PARAMETERS;
-				} else {
-					convert_to_boolean_ex(args[argc]);
-					int bl = Z_LVAL_PP(args[argc]);
-					argc--;
-					res = CacheGlobalKill(argc,bl);
-				} 
-			}
+			res = CacheGlobalKill(argc-1,1);
 		}
-	} else {
-		res = WRONG_PARAMS_COUNT;
-	}
-	RETURN_LONG(res);
+	RETURN_LONG(0 == res);
 }
 
-PHP_FUNCTION(cach_global_order)
+PHP_FUNCTION(cach_kill_tree)
 {
-	zval **args[12];
-	int dir = 1, flag = 0, res = 0;
+	int res = 0;
 	int argc = ZEND_NUM_ARGS();
-	if (12 >= argc) {
-		res = __push_pp_global(argc-1);
+		res = __push_pp_global(argc);
 		if (0 == res) {
-			if(zend_get_parameters_array_ex(argc, args) != SUCCESS) {
-				res = BRIDGE_INVALID_PARAMETERS;
-			} else {
-				argc--;
-				if (PZVAL_IS_REF(*args[argc])) {
-					res = BRIDGE_INVALID_PARAMETERS;
-				} else {
-					dir = Z_LVAL_PP(args[argc]);					
-					res = CacheGlobalOrder(argc-1,dir,flag);
-					if (0 == res) {
-						int iTemp;
-						double dTemp;
-						Callin_char_t *sPTemp;
-						switch (CacheType()) {
-							case CACHE_INT:
-								res = CachePopInt(&iTemp);
-								RETURN_LONG(iTemp);
-								break;
+			res = CacheGlobalKill(argc-1,0);
+		}
+	RETURN_LONG(0 == res);
+}
 
-							case CACHE_IEEE_DBL: //Function "CachePopDbl" is missing
-								/* fall-through */
-							case CACHE_DOUBLE:
-								res = CachePopDbl(&dTemp);
-								RETURN_DOUBLE(dTemp);
-								break;
+PHP_FUNCTION(cach_order)
+{
+	int res = 0;
+	int argc = ZEND_NUM_ARGS();
+		res = __push_pp_global(argc);
+		if (0 == res) {
+			res = CacheGlobalOrder(argc-1,1,0);
+			if (0 == res) {
+				int iTemp;
+				double dTemp;
+				Callin_char_t *sPTemp;
+				switch (CacheType()) {
+					case CACHE_INT:
+						res = CachePopInt(&iTemp);
+						RETURN_LONG(iTemp);
+						break;
 
-							case CACHE_ASTRING:	
-								/* fall-through */
-							case CACHE_WSTRING:
-								res = CachePopStr(&iTemp, &sPTemp);
-								sPTemp[iTemp]='\0';
-								RETURN_STRING(sPTemp, 1);
-								break;
+					case CACHE_IEEE_DBL: //Function "CachePopIEEEDbl" is missing
+						/* fall-through */
+					case CACHE_DOUBLE:
+						res = CachePopDbl(&dTemp);
+						RETURN_DOUBLE(dTemp);
+						break;
 
-							default:
-								res = CACHE_INVALID_PARAMETERS;
-								break;
-						}
-					}		
-				}
+					case CACHE_ASTRING:	
+						/* fall-through */
+					case CACHE_WSTRING:
+						res = CachePopStr(&iTemp, &sPTemp);
+						sPTemp[iTemp]='\0';
+						RETURN_STRING(sPTemp, 1);
+						break;
+
+					default:
+						res = CACHE_INVALID_PARAMETERS;
+						break;
+				}				
 			}
 		}
-	}
-	RETURN_LONG(res);	
+	RETURN_LONG(0 == res);	
+}
+
+PHP_FUNCTION(cach_order_rev)
+{
+	int res = 0;
+	int argc = ZEND_NUM_ARGS();
+		res = __push_pp_global(argc);
+		if (0 == res) {
+			res = CacheGlobalOrder(argc-1,-1,0);
+			if (0 == res) {
+				int iTemp;
+				double dTemp;
+				Callin_char_t *sPTemp;
+				switch (CacheType()) {
+					case CACHE_INT:
+						res = CachePopInt(&iTemp);
+						RETURN_LONG(iTemp);
+						break;
+
+					case CACHE_IEEE_DBL: //Function "CachePopIEEEDbl" is missing
+						/* fall-through */
+					case CACHE_DOUBLE:
+						res = CachePopDbl(&dTemp);
+						RETURN_DOUBLE(dTemp);
+						break;
+
+					case CACHE_ASTRING:	
+						/* fall-through */
+					case CACHE_WSTRING:
+						res = CachePopStr(&iTemp, &sPTemp);
+						sPTemp[iTemp]='\0';
+						RETURN_STRING(sPTemp, 1);
+						break;
+
+					default:
+						res = CACHE_INVALID_PARAMETERS;
+						break;
+				}				
+			}
+		}
+	RETURN_LONG(0 == res);	
 }
 
 /*****************************************************************************************/
