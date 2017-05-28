@@ -36,4 +36,10 @@
 		echo $i,"\n";
 		$i = cach_order('ccc',$i);
 	}
+
+	echo "\nexec:\n";
+	echo cach_exec("set ^global(5)=\"value\""),"\n";
+	echo cach_exec("set ^global(6)=\"value\""),"\n";
+	echo cach_exec("set ^global(7)=\"value\""),"\n";
+	echo cach_exec("kill ^global(6)"),"\n";
 ?>

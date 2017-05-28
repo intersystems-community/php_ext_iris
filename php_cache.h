@@ -2,6 +2,8 @@
 #define PHP_CACHE_EXT_NAME "cache_ext"
 
 PHP_MINIT_FUNCTION(cache);
+PHP_RINIT_FUNCTION(cache);
+PHP_RSHUTDOWN_FUNCTION(cache);
 PHP_MSHUTDOWN_FUNCTION(cache);
 PHP_FUNCTION(cach_set_dir);
 PHP_FUNCTION(cach_connect);
@@ -12,10 +14,8 @@ PHP_FUNCTION(cach_kill);
 PHP_FUNCTION(cach_kill_tree);
 PHP_FUNCTION(cach_order);
 PHP_FUNCTION(cach_order_rev);
+PHP_FUNCTION(cach_exec);
 PHP_FUNCTION(test);
 
-#define BRIDGE_INVALID_PARAMETERS  -101
-#define NULL_EXCEPTION -102
-#define WRONG_DATA_TYPE -103
-#define WRONG_PARAMS_COUNT -104
-#define CACHE_INVALID_PARAMETERS -105
+#define CACHE_ERROR 0
+#define CACHE_NO_ERROR 1
