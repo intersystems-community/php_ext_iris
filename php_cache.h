@@ -15,7 +15,12 @@ PHP_FUNCTION(cach_kill_tree);
 PHP_FUNCTION(cach_order);
 PHP_FUNCTION(cach_order_rev);
 PHP_FUNCTION(cach_exec);
+PHP_FUNCTION(cach_errno);
 PHP_FUNCTION(test);
 
 #define CACHE_ERROR 0
 #define CACHE_NO_ERROR 1
+#define NULL_EXCEPTION -101
+#define WRONG_DATA_TYPE -102
+#define WRONG_PARAMS_COUNT -103
+#define CACHE_INVALID_PARAMETERS -104 

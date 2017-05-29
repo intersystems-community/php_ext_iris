@@ -20,6 +20,7 @@ const zend_function_entry cache_functions[] = {
 	PHP_FE(cach_order, NULL)
 	PHP_FE(cach_order_rev, NULL)
 	PHP_FE(cach_exec, NULL)
+	PHP_FE(cach_errno, NULL)
 	PHP_FE(test, NULL)
 	PHP_FE_END
 };
@@ -52,6 +53,8 @@ typedef int strsize_t;
 typedef size_t strsize_t;
 #endif
 
+int cache_errno = 0;
+
 /*PHP_INI_BEGIN()
 PHP_INI_ENTRY("cache.test", "14", PHP_INI_ALL, NULL) // FIX THIS
 PHP_INI_ENTRY("cache.shdir", "/usr/lib/abadon/mgr", PHP_INI_ALL, NULL) // AND THIS
@@ -82,12 +85,15 @@ PHP_MSHUTDOWN_FUNCTION(cache)
 PHP_FUNCTION(cach_set_dir)
 {
 	strsize_t cparams;
-	int temp = CACHE_NO_ERROR;
+	int errno, temp = CACHE_NO_ERROR;
 	char *path;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &path, &cparams) == FAILURE) {
 		temp = CACHE_ERROR;
 	} else {
-		if (0 != CacheSetDir(path)) temp = CACHE_ERROR;
+		if (0 != (errno = CacheSetDir(path))) {
+			cache_errno = errno;
+			temp = CACHE_ERROR;
+		}
 	}
 	RETURN_LONG(temp);
 }
@@ -95,7 +101,7 @@ PHP_FUNCTION(cach_set_dir)
 PHP_FUNCTION(cach_connect)
 {
 	strsize_t argument_count, username_len, password_len;
-	int res = CACHE_NO_ERROR, tout = 0;
+	int errno, res = CACHE_NO_ERROR, tout = 0;
 	char *username, *password;
 	CACHE_STR pusername, ppassword, pexename;
 	if (zend_parse_parameters(2, "ss|",
@@ -118,27 +124,30 @@ PHP_FUNCTION(cach_connect)
 				#if ZEND_MODULE_API_NO <= 20131226
 					zval **args[3];
 					if(zend_get_parameters_array_ex(argument_count, args) != SUCCESS) {
+						cache_errno = CACHE_INVALID_PARAMETERS;
 						res = CACHE_ERROR;
 					} else {
 						if (PZVAL_IS_REF(*args[2])) {
+							cache_errno = CACHE_INVALID_PARAMETERS;
 							res = CACHE_ERROR;
 						} else {
 							if(IS_LONG == Z_TYPE_P(*args[2])) {
 								tout = Z_LVAL_P(*args[2]);
 							} else {
-								res = CACHE_ERROR;
+								php_error(E_ERROR, "%s(): invalid parameters type", get_active_function_name(TSRMLS_C));
 							}
 						}
 					}
 				#else
 					zval args[3];
 					if(zend_get_parameters_array_ex(argument_count, args) != SUCCESS) {
+						cache_errno = CACHE_INVALID_PARAMETERS;
 						res = CACHE_ERROR;
 					} else {
 						if(IS_LONG == Z_TYPE(args[2])) {
 							tout = Z_LVAL(args[2]);
 						} else {
-							res = CACHE_ERROR;
+							php_error(E_ERROR, "%s(): invalid parameters type", get_active_function_name(TSRMLS_C));
 						}
 					}
 				#endif
@@ -147,11 +156,13 @@ PHP_FUNCTION(cach_connect)
 			if (res) {
 				/* CACHE_PROGMODE т.к в случае ошибки соединение обрывается и не работает CacheError,
 				CACHE_TTNONE чтобы не перехватывало I/O */
-				if (0 != CacheSecureStart(&pusername,&ppassword,&pexename,CACHE_PROGMODE|CACHE_TTNONE,tout,NULL,NULL))
+				if (0 != (errno = CacheSecureStart(&pusername,&ppassword,&pexename,CACHE_PROGMODE|CACHE_TTNONE,tout,NULL,NULL))) {
+					cache_errno = errno;
 					res = CACHE_ERROR;
+				}
 			}
 		} else {
-			res = CACHE_ERROR;
+			php_error(E_ERROR, "%s(): invalid number of parameters", get_active_function_name(TSRMLS_C));
 		}
 	}
 	RETURN_LONG(res);
@@ -159,36 +170,52 @@ PHP_FUNCTION(cach_connect)
 
 PHP_FUNCTION(cach_quit)
 {
-	RETURN_LONG(0 == CacheEnd());
+	int res = CacheEnd();
+	if (0 != res) cache_errno = res;
+	RETURN_LONG(0 == res);
 }
 
 static int __push_zval(zval* value)
 {
-	int res = CACHE_NO_ERROR;
+	int errno, res = CACHE_NO_ERROR;
 	switch (Z_TYPE_P(value)) {
-		case IS_NULL:	
+		case IS_NULL:
+			cache_errno = NULL_EXCEPTION;	
 			res = CACHE_ERROR;
 			break;
 
 		#if ZEND_MODULE_API_NO <= 20131226
 			case IS_BOOL:
-				if (0 != CachePushInt(Z_LVAL_P(value))) res = CACHE_ERROR;
+				if (0 != (errno = CachePushInt(Z_LVAL_P(value)))) {
+					cache_errno = errno;
+					res = CACHE_ERROR;
+				}
 				break;
 		#endif
 
 		case IS_LONG:
-			if (0 != CachePushInt64(Z_LVAL_P(value))) res = CACHE_ERROR;
+			if (0 != (errno = CachePushInt64(Z_LVAL_P(value)))) {
+				cache_errno = errno;
+				res = CACHE_ERROR;
+			}
 			break;
 
 		case IS_DOUBLE:
-			if (0 != CachePushDbl(Z_DVAL_P(value))) res = CACHE_ERROR;
+			if (0 != (errno = CachePushDbl(Z_DVAL_P(value)))) {
+				cache_errno = errno;
+				res = CACHE_ERROR;
+			}
 			break;
 
 		case IS_STRING:
-			if (0 != CachePushStr(Z_STRLEN_P(value),Z_STRVAL_P(value))) res = CACHE_ERROR;
+			if (0 != CachePushStr(Z_STRLEN_P(value),Z_STRVAL_P(value))) {
+				cache_errno = errno;
+				res = CACHE_ERROR;
+			}
 			break;
 
 		default:
+			cache_errno = WRONG_DATA_TYPE;
 			res = CACHE_ERROR;
 			break;
 	}
@@ -197,26 +224,35 @@ static int __push_zval(zval* value)
 
 static int __push_pp_global(int argument_count)
 {
-	char *name;
+	char *name, *new_name;
 	strsize_t name_len;
-	int res = CACHE_NO_ERROR;
+	int errno, res = CACHE_NO_ERROR;
 	if (zend_parse_parameters(1, "s|", &name, &name_len) == FAILURE) {
 		res = CACHE_ERROR;
 	} else {
-		if (1 > argument_count || 12 < argument_count) {
+		if (name[0] != '^') {
+			php_error(E_WARNING, "%s(): the character \"^\" was not specified", get_active_function_name(TSRMLS_C));
+			errno = CACHE_INVALID_PARAMETERS;
 			res = CACHE_ERROR;
+		} else if (1 > argument_count || 30 < argument_count) {
+			php_error(E_ERROR, "%s(): invalid number of parameters", get_active_function_name(TSRMLS_C));
 		} else {
+			new_name = name + 1;
+			name_len = strlen(new_name);
 			#if ZEND_MODULE_API_NO <= 20131226
-				zval ***args[12];
+				zval ***args[30];
 				if(zend_get_parameters_array_ex(argument_count, args) != SUCCESS) {
+					cache_errno = CACHE_INVALID_PARAMETERS;
 					res = CACHE_ERROR;
 				} else {
-					if ((0 != CachePushGlobal(name_len,name))) {
+					if ((0 != (errno = CachePushGlobal(name_len,new_name)))) {
+						cache_errno = errno;
 						res = CACHE_ERROR;
 					} else {
 						int counter;
 						for (counter = 1; counter < argument_count; counter++) {
 							if (PZVAL_IS_REF(*args[counter])) {
+								cache_errno = CACHE_INVALID_PARAMETERS;
 								res = CACHE_ERROR;
 								break;
 							} else {
@@ -226,11 +262,13 @@ static int __push_pp_global(int argument_count)
 					} 
 				}
 			#else
-				zval args[12];
+				zval args[30];
 				if(zend_get_parameters_array_ex(argument_count, args) != SUCCESS) {
+					cache_errno = CACHE_INVALID_PARAMETERS;
 					res = CACHE_ERROR;
 				} else {
-					if (0 != CachePushGlobal(name_len,name)) {
+					if (0 != CachePushGlobal(name_len,new_name)) {
+						cache_errno = errno;
 						res = CACHE_ERROR;
 					} else {
 						int counter;
@@ -248,22 +286,26 @@ static int __push_pp_global(int argument_count)
 
 PHP_FUNCTION(cach_set)
 {
-	int res = CACHE_NO_ERROR;
+	int errno, res = CACHE_NO_ERROR;
 	if (1 < ZEND_NUM_ARGS()) {
 		if(res = __push_pp_global(ZEND_NUM_ARGS())) {
-			if (0 != CacheGlobalSet(ZEND_NUM_ARGS()-2)) res = CACHE_ERROR;
+			if (0 != (errno = CacheGlobalSet(ZEND_NUM_ARGS()-2))) {
+				cache_errno = errno;
+				res = CACHE_ERROR;
+			}
 		}
 	} else {
-		res = CACHE_ERROR;
+		php_error(E_ERROR, "%s(): invalid number of parameters", get_active_function_name(TSRMLS_C));
 	}
 	RETURN_LONG(res);
 }
 
 PHP_FUNCTION(cach_get)
 {
-	int flag = 1, res;
+	int errno, flag = 1, res;
 	if (res = __push_pp_global(ZEND_NUM_ARGS())) {
-		if (0 != CacheGlobalGet(ZEND_NUM_ARGS()-1,flag)) {
+		if (0 != (errno = CacheGlobalGet(ZEND_NUM_ARGS()-1,flag))) {
+			cache_errno = errno;
 			res = CACHE_ERROR;
 		} else {
 			int iTemp;
@@ -271,7 +313,8 @@ PHP_FUNCTION(cach_get)
 			Callin_char_t *sPTemp;
 			switch (CacheType()) {
 				case CACHE_INT:
-					if(0 != CachePopInt(&iTemp)) {
+					if(0 != (errno = CachePopInt(&iTemp))) {
+						cache_errno = errno;
 						res = CACHE_ERROR;
 					} else {
 						RETURN_LONG(iTemp);
@@ -281,7 +324,8 @@ PHP_FUNCTION(cach_get)
 				case CACHE_IEEE_DBL: //Function "CachePopIEEEDbl" is missing
 					/* fall-through */
 				case CACHE_DOUBLE:
-					if(0 != CachePopDbl(&dTemp)) {
+					if(0 != (errno = CachePopDbl(&dTemp))) {
+						cache_errno = errno;
 						res = CACHE_ERROR;
 					} else {
 						RETURN_DOUBLE(dTemp);
@@ -291,7 +335,8 @@ PHP_FUNCTION(cach_get)
 				case CACHE_ASTRING:
 					/* fall-through */
 				case CACHE_WSTRING:
-					if(0 != CachePopStr(&iTemp, &sPTemp)) {
+					if(0 != (errno = CachePopStr(&iTemp, &sPTemp))) {
+						cache_errno = errno;
 						res = CACHE_ERROR;
 					} else {
 						sPTemp[iTemp]='\0';
@@ -300,6 +345,7 @@ PHP_FUNCTION(cach_get)
 					break;
 
 				default:
+					cache_errno = WRONG_DATA_TYPE;
 					res = CACHE_ERROR;
 					break;
 			}
@@ -310,9 +356,10 @@ PHP_FUNCTION(cach_get)
 
 PHP_FUNCTION(cach_kill)
 {
-	int res, argc = ZEND_NUM_ARGS();
+	int errno, res, argc = ZEND_NUM_ARGS();
 	if (res = __push_pp_global(argc)) {
-		if (0 != CacheGlobalKill(argc-1,1)) {
+		if (0 != (errno = CacheGlobalKill(argc-1,1))) {
+			cache_errno = errno;
 			res = CACHE_ERROR;
 		}
 	}
@@ -321,9 +368,10 @@ PHP_FUNCTION(cach_kill)
 
 PHP_FUNCTION(cach_kill_tree)
 {
-	int res, argc = ZEND_NUM_ARGS();
+	int errno, res, argc = ZEND_NUM_ARGS();
 	if (res = __push_pp_global(argc)) {
-		if(0 != CacheGlobalKill(argc-1,0)) {
+		if(0 != (errno = CacheGlobalKill(argc-1,0))) {
+			cache_errno = errno;
 			res = CACHE_ERROR;
 		}
 	}
@@ -332,9 +380,10 @@ PHP_FUNCTION(cach_kill_tree)
 
 PHP_FUNCTION(cach_order)
 {
-	int res, argc = ZEND_NUM_ARGS();
+	int errno, res, argc = ZEND_NUM_ARGS();
 	if (res = __push_pp_global(argc)) {
-		if (0 != CacheGlobalOrder(argc-1,1,0)) {
+		if (0 != (errno = CacheGlobalOrder(argc-1,1,0))) {
+			cache_errno = errno;
 			res = CACHE_ERROR;
 		} else {
 			int iTemp;
@@ -342,7 +391,8 @@ PHP_FUNCTION(cach_order)
 			Callin_char_t *sPTemp;
 			switch (CacheType()) {
 				case CACHE_INT:
-					if(0 != CachePopInt(&iTemp)) {
+					if(0 != (errno = CachePopInt(&iTemp))) {
+						cache_errno = errno;
 						res = CACHE_ERROR;
 					} else {
 						RETURN_LONG(iTemp);
@@ -352,7 +402,8 @@ PHP_FUNCTION(cach_order)
 				case CACHE_IEEE_DBL: //Function "CachePopIEEEDbl" is missing
 					/* fall-through */
 				case CACHE_DOUBLE:
-					if(0 != CachePopDbl(&dTemp)) {
+					if(0 != (errno = CachePopDbl(&dTemp))) {
+						cache_errno = errno;
 						res = CACHE_ERROR;
 					} else {
 						RETURN_DOUBLE(dTemp);
@@ -362,7 +413,8 @@ PHP_FUNCTION(cach_order)
 				case CACHE_ASTRING:
 					/* fall-through */
 				case CACHE_WSTRING:
-					if(0 != CachePopStr(&iTemp, &sPTemp)) {
+					if(0 != (errno = CachePopStr(&iTemp, &sPTemp))) {
+						cache_errno = errno;
 						res = CACHE_ERROR;
 					} else {
 						sPTemp[iTemp]='\0';
@@ -371,6 +423,7 @@ PHP_FUNCTION(cach_order)
 					break;
 
 				default:
+					cache_errno = WRONG_DATA_TYPE;
 					res = CACHE_ERROR;
 					break;
 			}
@@ -379,11 +432,14 @@ PHP_FUNCTION(cach_order)
 	RETURN_LONG(res);
 }
 
+/*****************************************************************************************/
+
 PHP_FUNCTION(cach_order_rev)
 {
-	int res, argc = ZEND_NUM_ARGS();
+	int errno, res, argc = ZEND_NUM_ARGS();
 	if (res = __push_pp_global(argc)) {
-		if(0 != CacheGlobalOrder(argc-1,-1,0)) {
+		if(0 != (errno = CacheGlobalOrder(argc-1,-1,0))) {
+			cache_errno = errno;
 			res = CACHE_ERROR;
 		} else {
 			int iTemp;
@@ -391,7 +447,8 @@ PHP_FUNCTION(cach_order_rev)
 			Callin_char_t *sPTemp;
 			switch (CacheType()) {
 				case CACHE_INT:
-					if(0 != CachePopInt(&iTemp)) {
+					if(0 != (errno = CachePopInt(&iTemp))) {
+						cache_errno = errno;
 						res = CACHE_ERROR;
 					} else {
 						RETURN_LONG(iTemp);
@@ -401,7 +458,8 @@ PHP_FUNCTION(cach_order_rev)
 				case CACHE_IEEE_DBL: //Function "CachePopIEEEDbl" is missing
 					/* fall-through */
 				case CACHE_DOUBLE:
-					if(0 != CachePopDbl(&dTemp)) {
+					if(0 != (errno = CachePopDbl(&dTemp))) {
+						cache_errno = errno;
 						res = CACHE_ERROR;
 					} else {
 						RETURN_DOUBLE(dTemp);
@@ -411,7 +469,8 @@ PHP_FUNCTION(cach_order_rev)
 				case CACHE_ASTRING:
 					/* fall-through */
 				case CACHE_WSTRING:
-					if(0 != CachePopStr(&iTemp, &sPTemp)) {
+					if(0 != (errno = CachePopStr(&iTemp, &sPTemp))) {
+						cache_errno = errno;
 						res = CACHE_ERROR;
 					} else {
 						sPTemp[iTemp]='\0';
@@ -420,12 +479,13 @@ PHP_FUNCTION(cach_order_rev)
 					break;
 
 				default:
+					cache_errno = WRONG_DATA_TYPE;
 					res = CACHE_ERROR;
 					break;
 			}
 		}
 	}
-	RETURN_LONG(res);	
+	RETURN_LONG(res)
 }
 
 PHP_FUNCTION(cach_exec)
@@ -439,16 +499,36 @@ PHP_FUNCTION(cach_exec)
 		CACHE_STR command;
 		strcpy((char *) command.str,command_str);
 		command.len = command_len;
-		if (0 != CacheExecute(&command)) {
+		if (0 != (errno = CacheExecute(&command))) {
+			cache_errno = errno;
 			res = CACHE_ERROR;
 		}
 	}
 	RETURN_LONG(res);
 }
 
-/*****************************************************************************************/
+PHP_FUNCTION(cach_errno)
+{
+	RETURN_LON(cache_errno);
+}
 
 PHP_FUNCTION(test)
 {
+	/*CACHE_STR errmsg;
+	CACHE_STR srcline;
+	int offset;
+	errmsg.len = 50;
+	srcline.len = 100;
+	zend_printf("%i\n", res);
+	if ((res = CacheError(&errmsg, &srcline, &offset)) != CACHE_SUCCESS)
+	zend_printf("\r\nfailed to display error - rc = %d",res);
 
+	printf("%i\n", strlen(errmsg.str));
+	printf("%i\n", srcline.len);
+	errmsg.str[errmsg.len] = '\0';
+	srcline.str[srcline.len] = '\0';
+	zend_printf("%s\n", errmsg.str);
+	zend_printf("%s\n", srcline.str);
+	zend_printf("%i\n", res);
+	res = CACHE_ERROR;*/
 }
