@@ -19,10 +19,10 @@ const zend_function_entry cache_functions[] = {
 	PHP_FE(cach_kill_tree,NULL)
 	PHP_FE(cach_order, NULL)
 	PHP_FE(cach_order_rev, NULL)
+	PHP_FE(cach_query, NULL)
 	PHP_FE(cach_exec, NULL)
 	PHP_FE(cach_errno, NULL)
 	PHP_FE(cach_error, NULL)
-	PHP_FE(test, NULL)
 	PHP_FE_END
 };
 
@@ -47,10 +47,12 @@ ZEND_GET_MODULE(cache)
 
 #if ZEND_MODULE_API_NO <= 20131226
 #define _RETURN_STRING(str) RETURN_STRING(str, 0)
+#define _ZVAL_STRING(rev,str) ZVAL_STRING(rev,str,0)
 typedef long zend_long;
 typedef int strsize_t;
 #else
 #define _RETURN_STRING(str) RETURN_STRING(str)
+#define _ZVAL_STRING(rev,str) ZVAL_STRING(rev,str)
 typedef size_t strsize_t;
 #endif
 
@@ -60,7 +62,7 @@ char *cache_error, *cache_pth, *cache_lg, *cache_pw;
 PHP_INI_BEGIN()
 PHP_INI_ENTRY("cach.shdir", "/usr/lib/abadon/mgr", PHP_INI_ALL, NULL)
 PHP_INI_ENTRY("cach.login", "Admin", PHP_INI_ALL, NULL)
-PHP_INI_ENTRY("cach.password", "", PHP_INI_ALL, NULL)
+PHP_INI_ENTRY("cach.password", "1234", PHP_INI_ALL, NULL)
 PHP_INI_END()
 
 PHP_MINIT_FUNCTION(cache)
@@ -70,6 +72,7 @@ PHP_MINIT_FUNCTION(cache)
 	cache_lg = zend_ini_string("cach.login", strlen("cach.login"), 0);
 	cache_pw = zend_ini_string("cach.password", strlen("cach.password"), 0);
 	UNREGISTER_INI_ENTRIES();
+	cache_error = "No error";
 }
 
 PHP_MSHUTDOWN_FUNCTION(cache)
@@ -103,8 +106,10 @@ PHP_FUNCTION(cach_set_dir)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &path, &cparams) == FAILURE) {
 		temp = CACHE_ERROR;
 	} else {
-		path[cparams] = '\0';
-		strcpy(cache_pth, path);
+		if (cparams>0) {
+			path[cparams] = '\0';
+		}
+		cache_pth = path;
 	}
 	RETURN_LONG(temp);
 }
@@ -206,7 +211,7 @@ static int __push_zval(zval* value)
 	switch (Z_TYPE_P(value)) {
 		case IS_NULL:
 			cache_errno = NULL_EXCEPTION;
-			strcpy(cache_error, "Null exception");
+			cache_error = "Null exception";
 			res = CACHE_ERROR;
 			break;
 
@@ -242,7 +247,7 @@ static int __push_zval(zval* value)
 
 		default:
 			cache_errno = WRONG_DATA_TYPE;
-			strcpy(cache_error, "Wrong data type");
+			cache_error = "Wrong data type";
 			res = CACHE_ERROR;
 			break;
 	}
@@ -268,7 +273,7 @@ static int __push_pp_global(int argument_count)
 			new_name = name + 1;
 			name_len = strlen(new_name);
 			#if ZEND_MODULE_API_NO <= 20131226
-				zval ***args[30];
+				zval **args[30];
 				if(zend_get_parameters_array_ex(argument_count, args) != SUCCESS) {
 					sprintf(fl, "%s(): invalid parameters", get_active_function_name(TSRMLS_C));
 					cache_error = &fl[0];
@@ -318,6 +323,61 @@ static int __push_pp_global(int argument_count)
 	return res;
 }
 
+static zval __pop_cache()
+{
+	zval return_value;
+	int iTemp;
+	double dTemp;
+	Callin_char_t *sPTemp;
+	switch (CacheType()) {
+		case CACHE_INT:
+			if(0 != (errno = CachePopInt(&iTemp))) {
+				__on_cache_error(errno);
+				ZVAL_LONG(&return_value, CACHE_ERROR);
+			} else {
+				ZVAL_LONG(&return_value, iTemp);
+			}
+			break;
+
+		case CACHE_IEEE_DBL: //Function "CachePopIEEEDbl" is missing
+			/* fall-through */
+		case CACHE_DOUBLE:
+			if(0 != (errno = CachePopDbl(&dTemp))) {
+				__on_cache_error(errno);
+				ZVAL_LONG(&return_value, CACHE_ERROR);
+			} else {
+				ZVAL_DOUBLE(&return_value, dTemp);
+			}
+			break;
+
+		case CACHE_ASTRING:
+			/* fall-through */
+		case CACHE_WSTRING:
+			if(0 != (errno = CachePopStr(&iTemp, &sPTemp))) {
+				__on_cache_error(errno);
+				ZVAL_LONG(&return_value, CACHE_ERROR);
+			} else {
+				sPTemp[iTemp] = '\0';
+				char* endptr;
+				sPTemp[iTemp]='\0';
+				iTemp = strtoimax(sPTemp, &endptr, 10);
+				if (0 == strlen(endptr)) {
+					ZVAL_LONG(&return_value,iTemp);
+				} else {
+					_ZVAL_STRING(&return_value, sPTemp);
+				}
+			}
+			break;
+
+		default:
+			cache_errno = WRONG_DATA_TYPE;
+			cache_error = "Wrong data type";
+			ZVAL_LONG(&return_value, CACHE_ERROR);
+			break;
+	}
+	return return_value;
+}
+
 PHP_FUNCTION(cach_set)
 {
 	int errno, res = CACHE_NO_ERROR;
@@ -342,48 +402,8 @@ PHP_FUNCTION(cach_get)
 			__on_cache_error(errno);
 			res = CACHE_ERROR;
 		} else {
-			int iTemp;
-			double dTemp;
-			Callin_char_t *sPTemp;
-			switch (CacheType()) {
-				case CACHE_INT:
-					if(0 != (errno = CachePopInt(&iTemp))) {
-						__on_cache_error(errno);
-						res = CACHE_ERROR;
-					} else {
-						RETURN_LONG(iTemp);
-					}
-					break;
-
-				case CACHE_IEEE_DBL: //Function "CachePopIEEEDbl" is missing
-					/* fall-through */
-				case CACHE_DOUBLE:
-					if(0 != (errno = CachePopDbl(&dTemp))) {
-						__on_cache_error(errno);
-						res = CACHE_ERROR;
-					} else {
-						RETURN_DOUBLE(dTemp);
-					}
-					break;
-
-				case CACHE_ASTRING:
-					/* fall-through */
-				case CACHE_WSTRING:
-					if(0 != (errno = CachePopStr(&iTemp, &sPTemp))) {
-						__on_cache_error(errno);
-						res = CACHE_ERROR;
-					} else {
-						sPTemp[iTemp]='\0';
-						RETURN_STRING(sPTemp);
-					}
-					break;
-
-				default:
-					cache_errno = WRONG_DATA_TYPE;
-					strcpy(cache_error, "Wrong data type");
-					res = CACHE_ERROR;
-					break;
-			}
+			zval ret = __pop_cache();
+			RETURN_ZVAL(&ret,1,1);
 		}
 	}
 	RETURN_LONG(res);
@@ -421,48 +441,8 @@ PHP_FUNCTION(cach_order)
 			__on_cache_error(errno);
 			res = CACHE_ERROR;
 		} else {
-			int iTemp;
-			double dTemp;
-			Callin_char_t *sPTemp;
-			switch (CacheType()) {
-				case CACHE_INT:
-					if(0 != (errno = CachePopInt(&iTemp))) {
-						__on_cache_error(errno);
-						res = CACHE_ERROR;
-					} else {
-						RETURN_LONG(iTemp);
-					}
-					break;
-
-				case CACHE_IEEE_DBL: //Function "CachePopIEEEDbl" is missing
-					/* fall-through */
-				case CACHE_DOUBLE:
-					if(0 != (errno = CachePopDbl(&dTemp))) {
-						__on_cache_error(errno);
-						res = CACHE_ERROR;
-					} else {
-						RETURN_DOUBLE(dTemp);
-					}
-					break;
-
-				case CACHE_ASTRING:
-					/* fall-through */
-				case CACHE_WSTRING:
-					if(0 != (errno = CachePopStr(&iTemp, &sPTemp))) {
-						__on_cache_error(errno);
-						res = CACHE_ERROR;
-					} else {
-						sPTemp[iTemp]='\0';
-						RETURN_STRING(sPTemp);
-					}
-					break;
-
-				default:
-					cache_errno = WRONG_DATA_TYPE;
-					strcpy(cache_error, "Wrong data type");
-					res = CACHE_ERROR;
-					break;
-			}
+			zval ret = __pop_cache();
+			RETURN_ZVAL(&ret,1,1);
 		}
 	}
 	RETURN_LONG(res);
@@ -476,51 +456,44 @@ PHP_FUNCTION(cach_order_rev)
 			__on_cache_error(errno);
 			res = CACHE_ERROR;
 		} else {
-			int iTemp;
-			double dTemp;
-			Callin_char_t *sPTemp;
-			switch (CacheType()) {
-				case CACHE_INT:
-					if(0 != (errno = CachePopInt(&iTemp))) {
-						__on_cache_error(errno);
-						res = CACHE_ERROR;
-					} else {
-						RETURN_LONG(iTemp);
-					}
-					break;
+			zval ret = __pop_cache();
+			RETURN_ZVAL(&ret,1,1);
+		}
+	}
+	RETURN_LONG(res);
+}
 
-				case CACHE_IEEE_DBL: //Function "CachePopIEEEDbl" is missing
-					/* fall-through */
-				case CACHE_DOUBLE:
-					if(0 != (errno = CachePopDbl(&dTemp))) {
-						__on_cache_error(errno);
-						res = CACHE_ERROR;
-					} else {
-						RETURN_DOUBLE(dTemp);
-					}
-					break;
-
-				case CACHE_ASTRING:
-					/* fall-through */
-				case CACHE_WSTRING:
-					if(0 != (errno = CachePopStr(&iTemp, &sPTemp))) {
-						__on_cache_error(errno);
-						res = CACHE_ERROR;
-					} else {
-						sPTemp[iTemp]='\0';
-						RETURN_STRING(sPTemp);
-					}
-					break;
-
-				default:
-					cache_errno = WRONG_DATA_TYPE;
-					strcpy(cache_error, "Wrong data type");
-					res = CACHE_ERROR;
-					break;
+PHP_FUNCTION(cach_query)
+{
+	int errno, res, argc = ZEND_NUM_ARGS();
+	if (res = __push_pp_global(argc)) {
+		if (CACHE_SUCCESS != CachePushStr(0,"")) {
+			__on_cache_error(errno);
+			res = CACHE_ERROR;
+		} else if(0 != (errno = CacheGlobalOrder(argc,1,0))) {
+			__on_cache_error(errno);
+			res = CACHE_ERROR;
+		} else {
+			char fl[255];
+			zval args[30];
+			if(zend_get_parameters_array_ex(argc, args) != SUCCESS) {
+				sprintf(fl, "%s(): invalid parameters", get_active_function_name(TSRMLS_C));
+				cache_error = &fl[0];
+				cache_errno = CACHE_INVALID_PARAMETERS;
+				res = CACHE_ERROR;
+			} else {
+				zval myArray, ret = __pop_cache();
+				array_init(&myArray);
+				int counter;
+				for (counter = 0; counter < argc; counter++) {
+					add_index_zval(&myArray, counter, &args[counter]);
+				}
+				add_index_zval(&myArray, argc, &ret);
+				RETURN_ZVAL(&myArray,1,1);
 			}
 		}
 	}
-	RETURN_LONG(res)
+	RETURN_LONG(res);
 }
 
 PHP_FUNCTION(cach_exec)
@@ -549,12 +522,5 @@ PHP_FUNCTION(cach_errno)
 
 PHP_FUNCTION(cach_error)
 {
-	RETURN_STRING(cache_error);
-}
-
-/*****************************************************************************************/
-
-PHP_FUNCTION(test)
-{
-	
+	_RETURN_STRING(cache_error);
 }
