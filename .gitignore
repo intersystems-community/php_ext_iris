@@ -7,6 +7,7 @@
 !cdzf.h
 !config.m4
 !libcache.so
+!libcachet.so
 !php_cache.h
 !test.php
 !include/*

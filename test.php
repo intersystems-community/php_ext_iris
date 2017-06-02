@@ -1,11 +1,7 @@
 <?php
-	/*
-	ini_set('cache.shdir','/usr/lib/abadon/mgr');
-	echo ini_get('cache.shdir');
-	*/
 	/*echo phpinfo();*/
-	echo cach_set_dir('/usr/lib/abadon/mgr'),"\n";
-	echo cach_connect("test","1234"),"\n";
+	echo cach_set_dir('/InterSystems/Cache/mgr'),"\n";
+	echo cach_connect("login","password"),"\n";
 
 	$start = microtime(true);
 	for ($i=0;$i<10000000;$i++) {
