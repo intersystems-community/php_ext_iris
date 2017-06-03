@@ -1,15 +1,20 @@
 <?php
+	/*
+	ini_set('cache.shdir','/usr/lib/abadon/mgr');
+	echo ini_get('cache.shdir');
+	*/
 	/*echo phpinfo();*/
-	echo cach_set_dir('/InterSystems/Cache/mgr'),"\n";
-	echo cach_connect("login","password"),"\n";
+	echo cach_set_dir('/usr/lib/abadon/mgr'),"\n";
+	echo cach_connect("test","1234"),"\n";
 
-	$start = microtime(true);
+	/*$start = microtime(true);
 	for ($i=0;$i<10000000;$i++) {
 		cach_set('^time',1);
 	}
 	$time = microtime(true) - $start;
-	echo 'Скрипт выполнялся: ', $time," секунд\n";
+	echo 'Скрипт выполнялся: ', $time," секунд\n";*/
 
+	echo cach_set('^forKill','global',1),"\n";
 	echo cach_set('^forKill','tree',1,1,'value'),"\n";
 	echo cach_set('^forKill','tree',1,2,'value'),"\n";
 	echo cach_set('^forKill','tree',1,3,'value'),"\n";
@@ -47,9 +52,10 @@
 	}
 
 	echo "\nquery:\n";
-	print_r($query = cach_query('^ccc','new2'));
-	for (;$query[count($query)-1]<>"";) {
-		print_r($query = cach_query(...$query));
+	for ($q=cach_query('^ccc','new2');$q !== NULL;$q=cach_query($q)) {
+		echo cach_get($q),"\n";
+		cach_set($q,23);
+		print_r($q);
 	}
 
 	echo "\nexec:\n";
