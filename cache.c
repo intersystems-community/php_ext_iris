@@ -32,8 +32,8 @@ zend_module_entry cache_module_entry = {
 #endif
 	PHP_CACHE_EXT_NAME,
 	cache_functions,
-	PHP_MINIT(cache),
-	PHP_MSHUTDOWN(cache),
+	PHP_RINIT(cache),
+	PHP_RSHUTDOWN(cache),
 	NULL,
 	NULL,
 	NULL,
@@ -65,7 +65,7 @@ PHP_INI_ENTRY("cach.login", "Admin", PHP_INI_ALL, NULL)
 PHP_INI_ENTRY("cach.password", "1234", PHP_INI_ALL, NULL)
 PHP_INI_END()
 
-PHP_MINIT_FUNCTION(cache)
+PHP_RINIT_FUNCTION(cache)
 {
 	REGISTER_INI_ENTRIES();
 	cache_pth = zend_ini_string("cach.shdir", strlen("cach.shdir"), 0);
@@ -75,7 +75,7 @@ PHP_MINIT_FUNCTION(cache)
 	cache_error = "No error";
 }
 
-PHP_MSHUTDOWN_FUNCTION(cache)
+PHP_RSHUTDOWN_FUNCTION(cache)
 {
 	CacheEnd();
 }
