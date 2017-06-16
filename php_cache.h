@@ -3,6 +3,7 @@
 
 PHP_MINIT_FUNCTION(cache);
 PHP_MSHUTDOWN_FUNCTION(cache);
+PHP_RSHUTDOWN_FUNCTION(cache);
 PHP_FUNCTION(cach_set_dir);
 PHP_FUNCTION(cach_connect);
 PHP_FUNCTION(cach_quit);

@@ -32,9 +32,9 @@ zend_module_entry cache_module_entry = {
 #endif
 	PHP_CACHE_EXT_NAME,
 	cache_functions,
-	PHP_RINIT(cache),
+	PHP_MINIT(cache),
+	PHP_MSHUTDOWN(cache),
 	PHP_RSHUTDOWN(cache),
-	NULL,
 	NULL,
 	NULL,
 #if ZEND_MODULE_API_NO >= 20010901
@@ -56,8 +56,8 @@ typedef int strsize_t;
 typedef size_t strsize_t;
 #endif
 
-int cache_errno = 0;
-char *cache_error, *cache_pth, *cache_lg, *cache_pw;
+int cache_errno = 0, pth = 0;
+char *cache_error, *cache_pth;
 
 PHP_INI_BEGIN()
 PHP_INI_ENTRY("cach.shdir", "/usr/lib/abadon/mgr", PHP_INI_ALL, NULL)
@@ -65,13 +65,9 @@ PHP_INI_ENTRY("cach.login", "Admin", PHP_INI_ALL, NULL)
 PHP_INI_ENTRY("cach.password", "1234", PHP_INI_ALL, NULL)
 PHP_INI_END()
 
-PHP_RINIT_FUNCTION(cache)
+PHP_MINIT_FUNCTION(cache)
 {
 	REGISTER_INI_ENTRIES();
-	cache_pth = zend_ini_string("cach.shdir", strlen("cach.shdir"), 0);
-	cache_lg = zend_ini_string("cach.login", strlen("cach.login"), 0);
-	cache_pw = zend_ini_string("cach.password", strlen("cach.password"), 0);
-	UNREGISTER_INI_ENTRIES();
 	cache_error = "No error";
 }
 
@@ -80,6 +76,10 @@ PHP_RSHUTDOWN_FUNCTION(cache)
 	CacheEnd();
 }
 
+PHP_MSHUTDOWN_FUNCTION(cache)
+{
+	UNREGISTER_INI_ENTRIES();
+}
 
 static void __on_cache_error(int error) {
 	cache_errno = errno;
@@ -103,6 +103,7 @@ PHP_FUNCTION(cach_set_dir)
 	strsize_t cparams;
 	char *path;
 	int errno, temp = CACHE_NO_ERROR;
+	int argument_count = ZEND_NUM_ARGS();
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &path, &cparams) == FAILURE) {
 		temp = CACHE_ERROR;
 	} else {
@@ -110,6 +111,7 @@ PHP_FUNCTION(cach_set_dir)
 			path[cparams] = '\0';
 		}
 		cache_pth = path;
+		pth = 1;
 	}
 	RETURN_LONG(temp);
 }
@@ -121,6 +123,9 @@ PHP_FUNCTION(cach_connect)
 	char *username, *password;
 	CACHE_STR pusername, ppassword, pexename;
 
+	if (0 == pth) {
+		cache_pth = zend_ini_string("cach.shdir", strlen("cach.shdir"), 0);
+	}
 	if (CACHE_SUCCESS != (errno = CacheSetDir(cache_pth))) {
 		__on_cache_error(errno);
 		res = CACHE_ERROR;
@@ -130,8 +135,9 @@ PHP_FUNCTION(cach_connect)
 			strcpy((char *) pexename.str,"php");
 			pexename.len = (unsigned short)strlen((char *) pexename.str);
 			if (0 == argument_count) {
-				username = cache_lg;
-				password = cache_pw;
+				username = zend_ini_string("cach.login", strlen("cach.login"), 0);
+				password = zend_ini_string("cach.password", strlen("cach.password"), 0);
+
 			} else if (2 == argument_count || 3 == argument_count) {
 
 				#if ZEND_MODULE_API_NO <= 20131226
@@ -565,7 +571,7 @@ PHP_FUNCTION(cach_query)
 			}
 		}
 	}
-	RETURN_LONG(res);
+	RETURN_NULL();
 }
 
 PHP_FUNCTION(cach_exec)

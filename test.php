@@ -6,7 +6,7 @@
 	/*echo phpinfo();*/
 	echo cach_set_dir('/usr/lib/abadon/mgr'),"\n";
 	echo cach_connect("test","1234"),"\n";
-
+	
 	/*$start = microtime(true);
 	for ($i=0;$i<10000000;$i++) {
 		cach_set('^time',1);
@@ -14,7 +14,7 @@
 	$time = microtime(true) - $start;
 	echo 'Скрипт выполнялся: ', $time," секунд\n";*/
 
-	echo cach_set('^forKill','global',1),"\n";
+	echo cach_errno(),"\n";
 	echo cach_set('^forKill','tree',1,1,'value'),"\n";
 	echo cach_set('^forKill','tree',1,2,'value'),"\n";
 	echo cach_set('^forKill','tree',1,3,'value'),"\n";
@@ -46,7 +46,7 @@
 
 	echo "\norder:",$i="","\n";
 	$i = cach_order('^ccc',$i);
-	for (;$i<>"";) {
+	for (;$i !== 0;) {
 		echo $i,"\n";
 		$i = cach_order('^ccc',$i);
 	}
