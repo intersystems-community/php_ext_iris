@@ -4,8 +4,8 @@
 	echo ini_get('cache.shdir');
 	*/
 	/*echo phpinfo();*/
-	echo cach_set_dir('/usr/lib/abadon/mgr'),"\n";
-	echo cach_connect("test","1234"),"\n";
+	echo cach_set_dir('/InterSystems/Cache/mgr'),"\n";
+	echo cach_connect("root","pFg4Fn4AMiHTB24wj99s"),"\n";
 	
 	/*$start = microtime(true);
 	for ($i=0;$i<10000000;$i++) {
@@ -14,7 +14,6 @@
 	$time = microtime(true) - $start;
 	echo 'Скрипт выполнялся: ', $time," секунд\n";*/
 
-	echo cach_errno(),"\n";
 	echo cach_set('^forKill','tree',1,1,'value'),"\n";
 	echo cach_set('^forKill','tree',1,2,'value'),"\n";
 	echo cach_set('^forKill','tree',1,3,'value'),"\n";

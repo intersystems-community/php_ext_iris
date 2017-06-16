@@ -10,7 +10,7 @@ PHP_FUNCTION(cach_quit);
 PHP_FUNCTION(cach_set);
 PHP_FUNCTION(cach_get);
 PHP_FUNCTION(cach_kill);
-PHP_FUNCTION(cach_kill_tree);
+PHP_FUNCTION(cach_zkill);
 PHP_FUNCTION(cach_order);
 PHP_FUNCTION(cach_order_rev);
 PHP_FUNCTION(cach_query);

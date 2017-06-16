@@ -11,3 +11,4 @@
 !php_cache.h
 !test.php
 !include/*
+!cache.so

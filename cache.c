@@ -16,7 +16,7 @@ const zend_function_entry cache_functions[] = {
 	PHP_FE(cach_set, NULL)
 	PHP_FE(cach_get,NULL)
 	PHP_FE(cach_kill, NULL)
-	PHP_FE(cach_kill_tree,NULL)
+	PHP_FE(cach_zkill,NULL)
 	PHP_FE(cach_order, NULL)
 	PHP_FE(cach_order_rev, NULL)
 	PHP_FE(cach_query, NULL)
@@ -472,7 +472,7 @@ PHP_FUNCTION(cach_get)
 	RETURN_LONG(res);
 }
 
-PHP_FUNCTION(cach_kill)
+PHP_FUNCTION(cach_zkill)
 {
 	int errno, res, argc = ZEND_NUM_ARGS();
 	if (res = __push_pp_global(argc)) {
@@ -484,7 +484,7 @@ PHP_FUNCTION(cach_kill)
 	RETURN_LONG(res);
 }
 
-PHP_FUNCTION(cach_kill_tree)
+PHP_FUNCTION(cach_kill)
 {
 	int errno, res, argc = ZEND_NUM_ARGS();
 	if (res = __push_pp_global(argc)) {
