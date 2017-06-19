@@ -1,6 +1,6 @@
 # Function list
 
-**All functions returns FALSE if error occurs**
+**All functions (except *cache_get*) returns TRUE or FALSE if error occurs**
 
 ## Service function
 
