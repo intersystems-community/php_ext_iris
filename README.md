@@ -1,7 +1,8 @@
 # Function list
-------------
 
-**All functions returns FALSE if error occurs **
+**All functions returns FALSE if error occurs**
+
+## Service function
 
 *Get error code*
 
@@ -10,7 +11,8 @@ Returns: DB error code
 
 *Get error message*
 
-`cach_error();
+`cach_error();`
+
 Returns: DB error message
 
 *Setup connection: DB directory name*
@@ -25,7 +27,7 @@ Returns: DB error message
 
 `cach_quit();`
 
-# Data function
+## Data function
 
 *First argument may be array.*
 In this case this array contains full path to global node beginning with global name
@@ -36,7 +38,12 @@ Example:
 *Set global nodes examles*
 
 `cach_set('^time',1); // Set ^time=1`
+
 `cach_set('^time','tree',1,1,'value'); // Set ^time("tree", 1, 1) = "value"`
+
+*Get global node value*
+
+`cach_get('^time',1); // Set ^time=1`
 
 *Traverse global on same level*
 
@@ -45,6 +52,7 @@ Example:
 *Traverse global in depth*
 
 `cach_query('^ccc','new2','res2'); // $Query(^ccc("new2", "res2"))`
+
 Returns: always array with full path to global node beginning with global name
 
 *Reverse traverse global on same level*
