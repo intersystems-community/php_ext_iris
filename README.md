@@ -1,16 +1,51 @@
 # FTS_cache
-INSTALLATION
+Function list
 ------------
-    PHP Api Version:         20160303
-    To install the extension you have to do these actions:
-    1) execute command phpize
-    2) execute command ./configure
-    3) execute command make install
-    4)The most common way to load extension is to include it in your php.ini configuration
-    file. example: extension=cache.so
 
-    Для установки расширения выполните следующие действия:
-    1) выполните команду phpize
-    2) выполните команду ./configure
-    3) выполните команду make install
-    4) для использования необходимо добавить в файл php.ini, например: extension=cache.so
+== All functions returns FALSE if error occurs ==
+
+# Get error code
+cach_errno();
+Returns: DB error code
+
+# Get error message
+cach_error();
+Returns: DB error message
+
+# Setup connection: DB directory name
+cach_set_dir('/InterSystems/Cache/mgr');
+
+# Connect to DB
+cach_connect("login","password");
+
+# Disconnect from DB
+cach_quit();
+
+= Data function =
+
+== First argument may be array. ==
+In this case this array contains full path to global node beginning with global name
+Example: array("^time", "subscript1", ..., "subscriptN")
+
+# Set global nodes examles
+cach_set('^time',1); // Set ^time=1
+echo cach_set('^time','tree',1,1,'value'); // Set ^time("tree", 1, 1) = "value"
+
+# Traverse global on same level
+cach_order('^ccc','new2','res2'); // $Order(^ccc("new2", "res2"))
+
+# Traverse global in depth
+cach_query('^ccc','new2','res2'); // $Query(^ccc("new2", "res2"))
+Returns: always array with full path to global node beginning with global name
+
+# Reverse traverse global on same level
+cach_order_rev('^ccc','new2','res2'); // $Order(^ccc("new2", "res2"), -1)
+
+# Killing one node
+cach_zkill('^forKill','global');  // ZKill ^forKill("global")
+
+# Killing entire tree
+cach_kill('^forKill','global');  // Kill ^forKill("global")
+
+# Execute DB command
+cach_exec("kill ^global(6)");
