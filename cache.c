@@ -23,6 +23,7 @@ const zend_function_entry cache_functions[] = {
 	PHP_FE(cach_exec, NULL)
 	PHP_FE(cach_errno, NULL)
 	PHP_FE(cach_error, NULL)
+	PHP_FE(cach_pzkw, NULL)
 	PHP_FE_END
 };
 
@@ -57,7 +58,7 @@ typedef size_t strsize_t;
 #endif
 
 int cache_errno = 0, pth = 0;
-char *cache_error, *cache_pth;
+char *cache_error, *cache_pth = "No error";
 
 PHP_INI_BEGIN()
 PHP_INI_ENTRY("cach.shdir", "/usr/lib/abadon/mgr", PHP_INI_ALL, NULL)
@@ -68,7 +69,6 @@ PHP_INI_END()
 PHP_MINIT_FUNCTION(cache)
 {
 	REGISTER_INI_ENTRIES();
-	cache_error = "No error";
 }
 
 PHP_RSHUTDOWN_FUNCTION(cache)
@@ -78,6 +78,7 @@ PHP_RSHUTDOWN_FUNCTION(cache)
 
 PHP_MSHUTDOWN_FUNCTION(cache)
 {
+	CacheEndAll();
 	UNREGISTER_INI_ENTRIES();
 }
 
@@ -113,7 +114,9 @@ PHP_FUNCTION(cach_set_dir)
 		cache_pth = path;
 		pth = 1;
 	}
-	RETURN_LONG(temp);
+	if(0 == temp) {
+		RETURN_FALSE;
+	} RETURN_TRUE;
 }
 
 PHP_FUNCTION(cach_connect)
@@ -201,14 +204,18 @@ PHP_FUNCTION(cach_connect)
 			php_error(E_WARNING, "%s(): invalid number of parameters", get_active_function_name(TSRMLS_C));
 		}
 	}
-	RETURN_LONG(res);
+	if(0 == res) {
+		RETURN_FALSE;
+	} RETURN_TRUE;
 }
 
 PHP_FUNCTION(cach_quit)
 {
 	int res = CacheEnd();
 	if (CACHE_SUCCESS != res) __on_cache_error(errno);
-	RETURN_LONG(CACHE_SUCCESS == res);
+	if(0 != res) {
+		RETURN_FALSE;
+	} RETURN_TRUE;
 }
 
 static int __push_zval(zval* value)
@@ -372,7 +379,8 @@ static zval __pop_cache()
 	int iTemp;
 	double dTemp;
 	Callin_char_t *sPTemp;
-	switch (CacheType()) {
+	int type = CacheType();
+	switch (type) {
 		case CACHE_INT:
 			if(0 != (errno = CachePopInt(&iTemp))) {
 				__on_cache_error(errno);
@@ -418,6 +426,7 @@ static zval __pop_cache()
 			ZVAL_LONG(&return_value, CACHE_ERROR);
 			break;
 	}
+	zend_printf("type: %i\n",type);
 	return return_value;
 }
 
@@ -454,7 +463,9 @@ PHP_FUNCTION(cach_set)
 	} else {
 		php_error(E_WARNING, "%s(): invalid number of parameters", get_active_function_name(TSRMLS_C));
 	}
-	RETURN_LONG(res);
+	if(0 == res) {
+		RETURN_FALSE;
+	} RETURN_TRUE;
 }
 
 PHP_FUNCTION(cach_get)
@@ -469,7 +480,9 @@ PHP_FUNCTION(cach_get)
 			RETURN_ZVAL(&ret,1,1);
 		}
 	}
-	RETURN_LONG(res);
+	if(0 == res) {
+		RETURN_FALSE;
+	} RETURN_TRUE;
 }
 
 PHP_FUNCTION(cach_zkill)
@@ -481,7 +494,9 @@ PHP_FUNCTION(cach_zkill)
 			res = CACHE_ERROR;
 		}
 	}
-	RETURN_LONG(res);
+	if(0 == res) {
+		RETURN_FALSE;
+	} RETURN_TRUE;
 }
 
 PHP_FUNCTION(cach_kill)
@@ -493,7 +508,9 @@ PHP_FUNCTION(cach_kill)
 			res = CACHE_ERROR;
 		}
 	}
-	RETURN_LONG(res);
+	if(0 == res) {
+		RETURN_FALSE;
+	} RETURN_TRUE;
 }
 
 PHP_FUNCTION(cach_order)
@@ -508,7 +525,9 @@ PHP_FUNCTION(cach_order)
 			RETURN_ZVAL(&ret,1,1);
 		}
 	}
-	RETURN_LONG(res);
+	if(0 == res) {
+		RETURN_FALSE;
+	} RETURN_TRUE;
 }
 
 PHP_FUNCTION(cach_order_rev)
@@ -523,7 +542,9 @@ PHP_FUNCTION(cach_order_rev)
 			RETURN_ZVAL(&ret,1,1);
 		}
 	}
-	RETURN_LONG(res);
+	if(0 == res) {
+		RETURN_FALSE;
+	} RETURN_TRUE;
 }
 
 PHP_FUNCTION(cach_query)
@@ -590,7 +611,10 @@ PHP_FUNCTION(cach_exec)
 			res = CACHE_ERROR;
 		}
 	}
-	RETURN_LONG(res);
+
+	if(0 == res) {
+		RETURN_FALSE;
+	} RETURN_TRUE;
 }
 
 PHP_FUNCTION(cach_errno)
@@ -601,4 +625,16 @@ PHP_FUNCTION(cach_errno)
 PHP_FUNCTION(cach_error)
 {
 	_RETURN_STRING(cache_error);
+}
+
+PHP_FUNCTION(cach_pzkw) //test func 
+{
+	int rflags;
+	int rc;
+	unsigned char *tag_ptr, *routine_ptr, *ptr;
+	int tag_len, routine_len, len;
+	int i;
+	rc = CachePushFunc(&rflags, tag_len, tag_ptr, routine_len, routine_ptr);
+	rc = CacheExtFun(rflags, 0);
+	rc = CachePopStr(&len, &ptr);
 }

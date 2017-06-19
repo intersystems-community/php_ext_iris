@@ -1,12 +1,8 @@
 <?php
-	/*
-	ini_set('cache.shdir','/usr/lib/abadon/mgr');
-	echo ini_get('cache.shdir');
-	*/
-	/*echo phpinfo();*/
-	echo cach_set_dir('/InterSystems/Cache/mgr'),"\n";
-	echo cach_connect("root","pFg4Fn4AMiHTB24wj99s"),"\n";
-	
+	//echo cach_set_dir('/InterSystems/Cache/mgr'),"\n";
+	echo cach_set_dir('/usr/lib/abadon/mgr'),"\n";
+	//echo cach_connect("root","pFg4Fn4AMiHTB24wj99s"),"\n";
+	echo cach_connect("test","1234"),"\n";
 	/*$start = microtime(true);
 	for ($i=0;$i<10000000;$i++) {
 		cach_set('^time',1);
@@ -38,14 +34,12 @@
 	echo cach_set('^ccc','test','yep','agw','morez','params',1337,5),"\n";
 	echo cach_get('^ccc','test','yep','agw','morez','params'),"\n"; 
 	echo cach_set('^ccc','test','yep','agw','morez',1337),"\n";
-	echo cach_order('^ccc','new2','res2'),"\n";
-	echo cach_order_rev('^ccc','new2','res2'),"\n";
-	echo cach_kill('^forKill','global'),"\n";
-	echo cach_kill_tree('^forKill','tree'),"\n";
+	echo cach_zkill('^forKill','global'),"\n";
+	echo cach_kill('^forKill','tree'),"\n";
 
 	echo "\norder:",$i="","\n";
 	$i = cach_order('^ccc',$i);
-	for (;$i !== 0;) {
+	for (;$i;) {
 		echo $i,"\n";
 		$i = cach_order('^ccc',$i);
 	}
@@ -62,4 +56,5 @@
 	echo cach_exec("set ^global(6)=\"value\""),"\n";
 	echo cach_exec("set ^global(7)=\"value\""),"\n";
 	echo cach_exec("kill ^global(6)"),"\n";
+	echo cach_pzkw(),"\n";
 ?>
