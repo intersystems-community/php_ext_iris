@@ -23,7 +23,6 @@ const zend_function_entry cache_functions[] = {
 	PHP_FE(cach_exec, NULL)
 	PHP_FE(cach_errno, NULL)
 	PHP_FE(cach_error, NULL)
-	PHP_FE(cach_pzkw, NULL)
 	PHP_FE_END
 };
 
@@ -61,7 +60,7 @@ int cache_errno = 0, pth = 0;
 char *cache_error, *cache_pth = "No error";
 
 PHP_INI_BEGIN()
-PHP_INI_ENTRY("cach.shdir", "/usr/lib/abadon/mgr", PHP_INI_ALL, NULL)
+PHP_INI_ENTRY("cach.shdir", "/InterSystems/Cache/mgr", PHP_INI_ALL, NULL)
 PHP_INI_ENTRY("cach.login", "Admin", PHP_INI_ALL, NULL)
 PHP_INI_ENTRY("cach.password", "1234", PHP_INI_ALL, NULL)
 PHP_INI_END()
@@ -379,8 +378,7 @@ static zval __pop_cache()
 	int iTemp;
 	double dTemp;
 	Callin_char_t *sPTemp;
-	int type = CacheType();
-	switch (type) {
+	switch (CacheType()) {
 		case CACHE_INT:
 			if(0 != (errno = CachePopInt(&iTemp))) {
 				__on_cache_error(errno);
@@ -426,7 +424,6 @@ static zval __pop_cache()
 			ZVAL_LONG(&return_value, CACHE_ERROR);
 			break;
 	}
-	zend_printf("type: %i\n",type);
 	return return_value;
 }
 
@@ -470,9 +467,12 @@ PHP_FUNCTION(cach_set)
 
 PHP_FUNCTION(cach_get)
 {
-	int errno, flag = 1, res, argc = ZEND_NUM_ARGS();
+	int errno, flag = 0, res, argc = ZEND_NUM_ARGS();
 	if (res = __push_pp_global(argc)) {
 		if (0 != (errno = CacheGlobalGet(__received_parameters_count(argc)-1,flag))) {
+			if (errno == CACHE_ERUNDEF) {
+				RETURN_NULL();
+			}
 			__on_cache_error(errno);
 			res = CACHE_ERROR;
 		} else {
@@ -480,9 +480,7 @@ PHP_FUNCTION(cach_get)
 			RETURN_ZVAL(&ret,1,1);
 		}
 	}
-	if(0 == res) {
-		RETURN_FALSE;
-	} RETURN_TRUE;
+	RETURN_FALSE;
 }
 
 PHP_FUNCTION(cach_zkill)
@@ -525,9 +523,7 @@ PHP_FUNCTION(cach_order)
 			RETURN_ZVAL(&ret,1,1);
 		}
 	}
-	if(0 == res) {
-		RETURN_FALSE;
-	} RETURN_TRUE;
+	RETURN_NULL();
 }
 
 PHP_FUNCTION(cach_order_rev)
@@ -542,9 +538,7 @@ PHP_FUNCTION(cach_order_rev)
 			RETURN_ZVAL(&ret,1,1);
 		}
 	}
-	if(0 == res) {
-		RETURN_FALSE;
-	} RETURN_TRUE;
+	RETURN_NULL();
 }
 
 PHP_FUNCTION(cach_query)
@@ -611,7 +605,6 @@ PHP_FUNCTION(cach_exec)
 			res = CACHE_ERROR;
 		}
 	}
-
 	if(0 == res) {
 		RETURN_FALSE;
 	} RETURN_TRUE;
@@ -625,16 +618,4 @@ PHP_FUNCTION(cach_errno)
 PHP_FUNCTION(cach_error)
 {
 	_RETURN_STRING(cache_error);
-}
-
-PHP_FUNCTION(cach_pzkw) //test func 
-{
-	int rflags;
-	int rc;
-	unsigned char *tag_ptr, *routine_ptr, *ptr;
-	int tag_len, routine_len, len;
-	int i;
-	rc = CachePushFunc(&rflags, tag_len, tag_ptr, routine_len, routine_ptr);
-	rc = CacheExtFun(rflags, 0);
-	rc = CachePopStr(&len, &ptr);
 }

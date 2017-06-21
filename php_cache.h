@@ -17,7 +17,6 @@ PHP_FUNCTION(cach_query);
 PHP_FUNCTION(cach_exec);
 PHP_FUNCTION(cach_errno);
 PHP_FUNCTION(cach_error);
-PHP_FUNCTION(cach_pzkw);
 
 #define CACHE_ERROR 0
 #define CACHE_NO_ERROR 1

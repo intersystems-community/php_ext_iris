@@ -1,8 +1,7 @@
 <?php
-	//echo cach_set_dir('/InterSystems/Cache/mgr'),"\n";
-	echo cach_set_dir('/usr/lib/abadon/mgr'),"\n";
-	//echo cach_connect("root","pFg4Fn4AMiHTB24wj99s"),"\n";
-	echo cach_connect("test","1234"),"\n";
+	echo cach_set_dir('/InterSystems/Cache/mgr'),"\n";
+	echo cach_connect("root","pFg4Fn4AMiHTB24wj99s"),"\n";
+
 	/*$start = microtime(true);
 	for ($i=0;$i<10000000;$i++) {
 		cach_set('^time',1);
@@ -56,5 +55,10 @@
 	echo cach_exec("set ^global(6)=\"value\""),"\n";
 	echo cach_exec("set ^global(7)=\"value\""),"\n";
 	echo cach_exec("kill ^global(6)"),"\n";
-	echo cach_pzkw(),"\n";
+	echo cach_exec("set ^aa = \$znspace"),"\n";
+	var_dump(cach_get("^aa"));
+	echo cach_exec("znspace \"SAMPLES\""),"\n";
+	echo cach_exec("set ^aa = \$znspace"),"\n";
+	var_dump(cach_get("^aa"));
+	var_dump(cach_get("^notfnd"));
 ?>
