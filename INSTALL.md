@@ -18,6 +18,7 @@ You able build your module or use our precompiled module.
 
 ### By default this php module uses empty namespace and using globals is unpossible.
 **For using php module you need select namespace.**
+
 You can use Caché WEB User Interface ("Users editing" tab, "Startup Namespace" field)
 or php function to do so.
 For example:
