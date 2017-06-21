@@ -47,6 +47,8 @@ Example:
 
 `cach_get('^time',1); // Set ^time=1`
 
+Returns: Value of global node, NULL - if node undefined, FALSE - by error.
+
 ### Traverse global on same level
 
 `cach_order('^ccc','new2','res2'); // $Order(^ccc("new2", "res2"))`
