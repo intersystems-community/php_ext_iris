@@ -9,7 +9,8 @@ INSTALLATION
     4) The most common way to load extension is to include it in your php.ini configuration
     file, example: extension=cache.so
     5) Enable interface callin and select desired authentication type.
-    6) By default this php module uses empty namespace, for using php module you have to change namespace. 
+    6) By default this php module uses empty namespace.
+    For using php module you have to change namespace. 
     You can use WEB User Interface (users editing tab, field Startup Namespace) or php function to do so.
     For example: cach_exec('znspace "SAMPLES"');
 
@@ -19,6 +20,7 @@ INSTALLATION
     3) выполните команду make install
     4) для использования необходимо добавить в файл php.ini, например: extension=cache.so
     5) Включить интерфейс callin и выбрать желаемый тип аутентификации
-    6) По умолчанию модуль php использует пустой параметр для namespace. Для использования модуля необходимо изменить параметр namespace.
+    6) По умолчанию модуль php использует пустой параметр для namespace.
+    Для использования модуля необходимо изменить параметр namespace.
     Для этого вы можете использовать веб-интерфейс (вкладка редактирования пользователей, поле Startup Namespace) или php функцию.
     Пример: cach_exec('znspace "SAMPLES"');
