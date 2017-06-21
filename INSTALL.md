@@ -2,7 +2,7 @@
 
 PHP Api Version:         20160303
 
-You able build your module or use our precompiled module.
+You able build your module or use our precompiled module *cach.so*.
 
 ## Build & install
 1. `cd` in source dir
