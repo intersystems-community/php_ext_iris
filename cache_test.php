@@ -3,7 +3,7 @@
 	$uid_session = session_id();
 	echo '<div align="center">';
 	echo '<h1>Cache extension</h1>';
-	if ((!isset($_POST['submit']))&&(!isset($_POST['sbmNmsp'])&&(!isset($_POST['sbset']))&&(!isset($_POST['sbget']))&&(!isset($_POST['sbkill']))&&(!isset($_POST['sbzkill']))&&(!isset($_POST['sbord']))&&(!isset($_POST['sbordv']))&&(!isset($_POST['sbqur']))&&(!isset($_POST['sbexec']))&&(!isset($_POST['sbCset'])))) {
+	if ((!isset($_POST['submit']))&&(!isset($_POST['sbmNmsp'])&&(!isset($_POST['sbset']))&&(!isset($_POST['sbget']))&&(!isset($_POST['sbkill']))&&(!isset($_POST['sbzkill']))&&(!isset($_POST['sbord']))&&(!isset($_POST['sbordv']))&&(!isset($_POST['sbqur']))&&(!isset($_POST['sbexec']))&&(!isset($_POST['sbCset']))&&(!isset($_POST['sberrno']))&&(!isset($_POST['sberror']))&&(!isset($_POST['sbquit'])))) {
 		echo '<title>Authentication in InterSystems Cache from PHP</title><form method="POST">Путь: <input style="margin-top:15" name="path" type="text" value="/InterSystems/Cache/mgr"><br>Логин: <input style="margin-top:15" name="login" type="text" value="test_php"><br>Пароль: <input style="margin-top:15" name="pass" type="text" value="123456"><br><input style="margin-top:25" name="submit" type="submit" value="Войти"></form>';
 		if (isset($_SESSION['error'])) {
 			echo '<p style="color:#FF0000">'.$_SESSION['error'].'<p>';
@@ -124,6 +124,16 @@
 				$_SESSION['stCInx1']=$_POST['stCInx1'];
 				$_SESSION['stCInx2']=$_POST['stCInx2'];
 				$_SESSION['stCVal']=$_POST['stCVal'];
+			} else 
+			if (isset($_POST['sberrno'])) {
+				$_SESSION['res_cach_errno'] = cach_errno();
+			} else
+			if (isset($_POST['sberrno'])) {
+				$_SESSION['res_cach_error'] = cach_error();
+			} else
+			if (isset($_POST['sbquit'])) {
+				$_SESSION['res_cach_quit'] = cach_quit();
+				echo '<br><meta http-equiv="refresh" content="0; url=auth.php">';
 			}
 			echo "Cache version: ".$temp."<br>";
 			if (cach_exec('set ^CacheN4m3sp4s3("'.$uid_session.'") = $znspace')) {
@@ -168,6 +178,16 @@
 					if (isset($_POST['sbexec'])) echo '<tr style="background-color:#6b8e23">'; else echo '<tr>';
 					echo '<td>cach_exec</td><td>Cmd: <input name="COS" value="'.$_SESSION['COS'].'"><br><input name="sbexec" type="submit" value="Выполнить"></td><td>';
 					var_dump($_SESSION['res_cach_exec']);
+					echo '</td></tr>';
+					if (isset($_POST['sberrno'])) echo '<tr style="background-color:#6b8e23">'; else echo '<tr>';
+					echo '<td>cach_erno</td><td><br><input name="sberrno" type="submit" value="Выполнить"></td><td>';
+					var_dump($_SESSION['res_cach_errno']);
+					echo '</td></tr>';
+					if (isset($_POST['sberror'])) echo '<tr style="background-color:#6b8e23">'; else echo '<tr>';
+					echo '<td>cach_error</td><td><br><input name="sberror" type="submit" value="Выполнить"></td><td>';
+					var_dump($_SESSION['res_cach_error']);
+					echo '</td></tr>';
+					echo '<td>cach_quit</td><td><br><input name="sbquit" type="submit" value="Выполнить"></td><td>';
 					echo '</td></tr>';
 					echo '<tr><th>Тест</th><th>Параметры</th><th>Результат (сек.)</th></tr>';
 					if (isset($_POST['sbCset'])) echo '<tr style="background-color:#6b8e23">'; else echo '<tr>';

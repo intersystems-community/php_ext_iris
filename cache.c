@@ -616,10 +616,20 @@ PHP_FUNCTION(cach_exec)
 
 PHP_FUNCTION(cach_errno)
 {
-	RETURN_LONG(cache_errno);
+	if (0 == cache_errno||-7 == cache_errno) {
+		RETURN_FALSE;
+	} else {
+		int retrn = cache_errno;
+		cache_errno = 0;
+		RETURN_LONG(retrn);
+	}
 }
 
 PHP_FUNCTION(cach_error)
 {
-	_RETURN_STRING(cache_error);
+	char* retrn;
+	retrn = malloc(strlen(cache_error));
+	strcpy(retrn, cache_error);
+	cache_error = "No error";
+	_RETURN_STRING(retrn);
 }
