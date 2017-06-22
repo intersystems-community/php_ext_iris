@@ -466,7 +466,13 @@ PHP_FUNCTION(cach_set)
 	}
 	if(0 == res) {
 		RETURN_FALSE;
-	} RETURN_TRUE;
+	} else {
+		if (CACHE_INVALID_LOCAL == cache_errno) {
+			RETURN_FALSE;
+		} else {
+			RETURN_TRUE;
+		}
+	}
 }
 
 PHP_FUNCTION(cach_get)
@@ -498,7 +504,13 @@ PHP_FUNCTION(cach_zkill)
 	}
 	if(0 == res) {
 		RETURN_FALSE;
-	} RETURN_TRUE;
+	} else {
+		if (CACHE_INVALID_LOCAL == cache_errno) {
+			RETURN_FALSE;
+		} else {
+			RETURN_TRUE;
+		}
+	}
 }
 
 PHP_FUNCTION(cach_kill)
@@ -512,7 +524,13 @@ PHP_FUNCTION(cach_kill)
 	}
 	if(0 == res) {
 		RETURN_FALSE;
-	} RETURN_TRUE;
+	} else {
+		if (CACHE_INVALID_LOCAL == cache_errno) {
+			RETURN_FALSE;
+		} else {
+			RETURN_TRUE;
+		}
+	}
 }
 
 PHP_FUNCTION(cach_order)
