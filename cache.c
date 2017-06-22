@@ -266,7 +266,7 @@ static int __push_zval(zval* value)
 						name = Z_STRVAL_P(new_value);
 						if (name[0] != '^') {
 							php_error(E_WARNING, "%s(): the character \"^\" was not specified", get_active_function_name(TSRMLS_C));
-							errno = CACHE_INVALID_PARAMETERS;
+							errno = CACHE_INVALID_LOCAL;
 							res = CACHE_ERROR;
 						} else {
 							new_name = name + 1;
@@ -327,7 +327,7 @@ static int __push_pp_global(int argument_count)
 							if (PZVAL_IS_REF(*args[counter])) {
 								sprintf(fl, "%s(): invalid parameters", get_active_function_name(TSRMLS_C));
 								cache_error = &fl[0];
-								cache_errno = CACHE_INVALID_PARAMETERS;
+								cache_errno = CACHE_INVALID_LOCAL;
 								res = CACHE_ERROR;
 								break;
 							} else {
@@ -349,7 +349,7 @@ static int __push_pp_global(int argument_count)
 						name = Z_STRVAL(args[0]);
 						if (name[0] != '^') {
 							php_error(E_WARNING, "%s(): the character \"^\" was not specified", get_active_function_name(TSRMLS_C));
-							errno = CACHE_INVALID_PARAMETERS;
+							errno = CACHE_INVALID_LOCAL;
 							res = CACHE_ERROR;
 						} else {
 							new_name = name + 1;
@@ -360,10 +360,10 @@ static int __push_pp_global(int argument_count)
 							} else {
 								counter++;
 							}
+							for (;counter < argument_count; counter++) {
+								if(!(res = __push_zval(&args[counter]))) break;
+							}
 						}
-					}
-					for (;counter < argument_count; counter++) {
-						if(!(res = __push_zval(&args[counter]))) break;
 					}
 				}
 			#endif
