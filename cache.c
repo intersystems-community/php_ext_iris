@@ -409,11 +409,15 @@ static zval __pop_cache()
 				sPTemp[iTemp] = '\0';
 				char* endptr;
 				sPTemp[iTemp]='\0';
-				iTemp = strtoimax(sPTemp, &endptr, 10);
-				if (0 == strlen(endptr)) {
-					ZVAL_LONG(&return_value,iTemp);
+				if (0 != iTemp) {
+					iTemp = strtoimax(sPTemp, &endptr, 10);
+					if (0 == strlen(endptr)) {
+						ZVAL_LONG(&return_value,iTemp);
+					} else {
+						_ZVAL_STRING(&return_value, sPTemp);
+					}
 				} else {
-					_ZVAL_STRING(&return_value, sPTemp);
+					ZVAL_NULL(&return_value);
 				}
 			}
 			break;
