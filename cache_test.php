@@ -28,7 +28,7 @@
 					$_SESSION['connected'] = 1;
 					cach_exec('set ^CacheV3rs10n("'.$uid_session.'") = $zv');
 				} else {
-					$_SESSION['error'] = "Authentication error<br>";
+					$_SESSION['error'] = "Authentication error, with code: ".cach_errno()."<br>";
 					echo '<br><meta http-equiv="refresh" content="0; url=cache_test.php">';
 					exit();
 				}
