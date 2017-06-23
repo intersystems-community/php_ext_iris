@@ -12,10 +12,11 @@ Example (for Ubuntu) `app-get httpd php php-dev`
 
 ## Build & install
 1. `cd` in source dir
-2. execute command `phpize` from php disribution
-3. `./configure`
-4. `make`
-4. `make install`
+2. Copy libcachet.so from Caché distribution `cp /InterSystems/Cache/bin/libcachet.so ./`
+3. execute command `phpize` from php disribution
+4. `./configure`
+5. `make`
+6. `make install`
 
 ## Setup module
 
@@ -45,10 +46,11 @@ For example:
 
 ## Сборка и установка
 1. Перейдите в папку исходного кода модуля
-2. выполните команду `phpize`
-3. выполните команду `./configure`
-4. выполните команду `make`
-5. выполните команду `make install`
+2. Копируем библиотеку libcachet.so из Caché дистрибутива `cp /InterSystems/Cache/bin/libcachet.so ./`
+3. выполните команду `phpize`
+4. выполните команду `./configure`
+5. выполните команду `make`
+6. выполните команду `make install`
 
 ## Настройка модуля
 
