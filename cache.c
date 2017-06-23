@@ -194,7 +194,7 @@ PHP_FUNCTION(cach_connect)
 			if (res) {
 				/* CACHE_PROGMODE т.к в случае ошибки соединение обрывается и не работает CacheError,
 				CACHE_TTNONE чтобы не перехватывало I/O */
-				if (CACHE_SUCCESS != (errno = CacheSecureStart(&pusername,&ppassword,&pexename,CACHE_PROGMODE|CACHE_TTNONE,tout,NULL,NULL))) {
+				if (CACHE_SUCCESS != (errno = CacheSecureStart(&pusername,&ppassword,&pexename,CACHE_PROGMODE,tout,NULL,NULL))) {
 					__on_cache_error(errno);
 					res = CACHE_ERROR;
 				}
