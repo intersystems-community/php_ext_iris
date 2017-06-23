@@ -19,7 +19,7 @@ Example (for Ubuntu) `app-get httpd php php-dev`
 
 ## Setup module
 
-1. The most common way to load extension is to include it in your `php.ini` configuration file, example: `extension=cache.so`
+1. The most common way to load extension is to include it in your `php.ini` configuration file, example: `extension=cach.so`
 2. Enable interface callin and select login&password authentication type in Cache web interface.
 
 ### By default this php module uses empty namespace and using globals is unpossible.
