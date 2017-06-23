@@ -5,7 +5,7 @@ PHP Api Version:         20160303
 You able build your module or use our precompiled module *cach.so* for various version Intersystems Caché.
 
 ## Before install
-1. Install `httpd`, `php` and `php-dev` packet by your packet manager. Example (for Ubuntu) `app-get php-dev`
+1. Install `httpd`, `php` and `php-dev` packet by your packet manager. Example (for Ubuntu) `app-get httpd php php-dev`
 2. Add cache to web-users group by `usermod -a -G cacheusr www-data` command
 
 ## Build & install
