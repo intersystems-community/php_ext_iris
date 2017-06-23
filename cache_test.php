@@ -46,8 +46,23 @@
 				}
 			}
 			if (isset($_POST['sbset'])) {
-				if (!$_SESSION['res_cach_set'] = cach_set($_POST['stGlNm'],$_POST['stInx1'],$_POST['stInx2'],$_POST['stVal'])) {
-					$_SESSION['error'] = '"Set" return error code: '.cach_errno()."<br>";
+				if ((empty($_POST['stGlNm']))||(empty($_POST['stVal']))) {
+					$_SESSION['res_cach_set'] = false;
+				} else {
+					if (empty($_POST['stInx1'])) {
+						if (!$_SESSION['res_cach_set'] = cach_set($_POST['stGlNm'],$_POST['stVal'])) {
+							$_SESSION['error'] = '"Set" return error code: '.cach_errno()."<br>";
+						}
+					} else 
+					if (empty($_POST['stInx2'])) {
+						if (!$_SESSION['res_cach_set'] = cach_set($_POST['stGlNm'],$_POST['stInx1'],$_POST['stVal'])) {
+							$_SESSION['error'] = '"Set" return error code: '.cach_errno()."<br>";
+						}						
+					} else {
+						if (!$_SESSION['res_cach_set'] = cach_set($_POST['stGlNm'],$_POST['stInx1'],$_POST['stInx2'],$_POST['stVal'])) {
+							$_SESSION['error'] = '"Set" return error code: '.cach_errno()."<br>";
+						}
+					}
 				}
 				$_SESSION['stGlNm']=$_POST['stGlNm'];
 				$_SESSION['stInx1']=$_POST['stInx1'];
@@ -55,8 +70,23 @@
 				$_SESSION['stVal']=$_POST['stVal'];
 			} else
 			if (isset($_POST['sbget'])) {
-				if (false === $_SESSION['res_cach_get'] = cach_get($_POST['gtGlNm'],$_POST['gtInx1'],$_POST['gtInx2'])) {
-					$_SESSION['error'] = '"Get" return error code: '.cach_errno()."<br>";
+				if (empty($_POST['gtGlNm'])) {
+					$_SESSION['res_cach_get'] = false;
+				} else {
+					if (empty($_POST['gtInx1'])) {
+						if (false === $_SESSION['res_cach_get'] = cach_get($_POST['gtGlNm'])) {
+							$_SESSION['error'] = '"Set" return error code: '.cach_errno()."<br>";
+						}
+					} else 
+					if (empty($_POST['gtInx2'])) {
+						if (false === $_SESSION['res_cach_get'] = cach_get($_POST['gtGlNm'],$_POST['gtInx1'])) {
+							$_SESSION['error'] = '"Set" return error code: '.cach_errno()."<br>";
+						}						
+					} else {
+						if (false === $_SESSION['res_cach_get'] = cach_get($_POST['stGlNm'],$_POST['stInx1'],$_POST['stInx2'])) {
+							$_SESSION['error'] = '"Set" return error code: '.cach_errno()."<br>";
+						}
+					}
 				}
 				$_SESSION['gtGlNm']=$_POST['gtGlNm'];
 				$_SESSION['gtInx1']=$_POST['gtInx1'];

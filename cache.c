@@ -466,13 +466,7 @@ PHP_FUNCTION(cach_set)
 	}
 	if(0 == res) {
 		RETURN_FALSE;
-	} else {
-		if (CACHE_INVALID_LOCAL == cache_errno) {
-			RETURN_FALSE;
-		} else {
-			RETURN_TRUE;
-		}
-	}
+	} RETURN_TRUE;
 }
 
 PHP_FUNCTION(cach_get)
@@ -504,13 +498,7 @@ PHP_FUNCTION(cach_zkill)
 	}
 	if(0 == res) {
 		RETURN_FALSE;
-	} else {
-		if (CACHE_INVALID_LOCAL == cache_errno) {
-			RETURN_FALSE;
-		} else {
-			RETURN_TRUE;
-		}
-	}
+	} RETURN_TRUE;
 }
 
 PHP_FUNCTION(cach_kill)
@@ -524,13 +512,7 @@ PHP_FUNCTION(cach_kill)
 	}
 	if(0 == res) {
 		RETURN_FALSE;
-	} else {
-		if (CACHE_INVALID_LOCAL == cache_errno) {
-			RETURN_FALSE;
-		} else {
-			RETURN_TRUE;
-		}
-	}
+	} RETURN_TRUE;
 }
 
 PHP_FUNCTION(cach_order)
@@ -634,20 +616,10 @@ PHP_FUNCTION(cach_exec)
 
 PHP_FUNCTION(cach_errno)
 {
-	if (0 == cache_errno||-7 == cache_errno) {
-		RETURN_FALSE;
-	} else {
-		int retrn = cache_errno;
-		cache_errno = 0;
-		RETURN_LONG(retrn);
-	}
+	RETURN_LONG(cache_errno);
 }
 
 PHP_FUNCTION(cach_error)
 {
-	char* retrn;
-	retrn = malloc(strlen(cache_error));
-	strcpy(retrn, cache_error);
-	cache_error = "No error";
-	_RETURN_STRING(retrn);
+	_RETURN_STRING(cache_error);
 }
