@@ -1,6 +1,6 @@
 # INSTALLATION
 
-PHP Api Version:         20160303
+PHP Api Version shoul be > 20131106
 
 You able build your module or use our precompiled module *cach.so* for various version Intersystems Caché.
 
@@ -33,8 +33,9 @@ For example:
 
 # Russian
 
-Вы можете собрать самостоятельно модуль или использовать предкомпилированный из данного репозитория.
+Версия PHP Api должна быть > 20131106. 
 
+Вы можете собрать самостоятельно модуль или использовать предкомпилированный из данного репозитория.
 
 ## Перед установкой
 1. Устанавливаем Caché
