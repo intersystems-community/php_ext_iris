@@ -2,7 +2,11 @@
 
 PHP Api Version:         20160303
 
-You able build your module or use our precompiled module *cach.so* for Intersystems Caché 2017.1.
+You able build your module or use our precompiled module *cach.so* for various version Intersystems Caché.
+
+## Before install
+1. Install `httpd`, `php` and `php-dev` packet by your packet manager. Example (for Ubuntu) `app-get php-dev`
+2. Add cache to web-users group by `usermod -a -G cacheusr www-data` command
 
 ## Build & install
 1. `cd` in source dir
@@ -13,7 +17,7 @@ You able build your module or use our precompiled module *cach.so* for Intersyst
 
 ## Setup module
 
-1. The most common way to load extension is to include it in your php.ini configuration file, example: extension=cache.so
+1. The most common way to load extension is to include it in your `php.ini` configuration file, example: `extension=cache.so`
 2. Enable interface callin and select login&password authentication type in Cache web interface.
 
 ### By default this php module uses empty namespace and using globals is unpossible.
