@@ -20,7 +20,7 @@ Example (for Ubuntu) `app-get httpd php php-dev`
 ## Setup module
 
 1. The most common way to load extension is to include it in your `php.ini` configuration file, example: `extension=cach.so`
-2. Enable interface callin and select login&password authentication type in Cache web interface.
+2. Enable interface callin (Service tab) and select login&password authentication type in Cache web interface.
 3. **Necessarily** select "Startup namespace". You can use Caché WEB User Interface ("Users editing" tab, "Startup Namespace" field) or php function to do so.
 
 ### By default this php module uses empty namespace and using globals is unpossible.
@@ -53,7 +53,7 @@ For example:
 ## Настройка модуля
 
 1. для использования необходимо добавить в файл php.ini, например: extension=cache.so
-2. Включить интерфейс callin и выбрать аутентификацию по пользователю и паролю в web-интерфейсе Caché.
+2. Включить интерфейс callin (в сервисах) и выбрать аутентификацию по пользователю и паролю в web-интерфейсе Caché.
 3. **ОБЯЗАТЕЛЬНО** выбрать "Startup namespace". Для этого вы можете использовать веб-интерфейс Caché (вкладка редактирования пользователей, поле "Startup Namespace") или php функцию.
 
 ### По умолчанию модуль не может работать с глобалами, пока не выбрана область (namespace).
