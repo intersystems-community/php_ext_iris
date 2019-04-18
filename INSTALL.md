@@ -50,7 +50,7 @@ For example:
 2. выполните команду `phpize`
 3. выполните команду `./configure --with-path=[DIR]`
    DIR - путь к Caché или напрямую к libcachet.so
-   например: ./configure --with-path=/InterSystems/Cache
+   например: ./configure --with-path=/InterSystems/Cache/bin
 4. выполните команду `make`
 5. выполните команду `make install`
 

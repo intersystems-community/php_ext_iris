@@ -81,8 +81,15 @@ PHP_MSHUTDOWN_FUNCTION(cache)
   UNREGISTER_INI_ENTRIES();
 }
 
+#define PHP_WARNING(s) \
+php_error(E_WARNING, "%s(): "s, get_active_function_name(TSRMLS_C));
+
+#define PHP_ERROR(s) \
+hp_error(E_ERROR, "%s(): "s, get_active_function_name(TSRMLS_C));
+
 // Processing error in InterSystem Cache
-static void __on_cache_error(int error) {
+static void __on_cache_error(int error)
+{
   cache_errno = errno;
   char fl[255];
   CACHE_STR errmsg;
@@ -90,10 +97,13 @@ static void __on_cache_error(int error) {
   int offset, res;
   errmsg.len = 50;
   srcline.len = 100;
-  if (CACHE_SUCCESS != (res = CacheError(&errmsg, &srcline, &offset))) {
+  if (CACHE_SUCCESS != (res = CacheError(&errmsg, &srcline, &offset)))
+  {
     sprintf(fl, "Failed get error - rc = %i", res);
     cache_error = &fl[0];
-  } else {
+  }
+  else
+  {
     errmsg.str[errmsg.len] = '\0';
     cache_error = errmsg.str;
   }
@@ -105,18 +115,20 @@ PHP_FUNCTION(cach_set_dir)
   char *path;
   int errno, temp = CACHE_NO_ERROR;
   int argument_count = ZEND_NUM_ARGS();
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &path, &cparams) == FAILURE) {
-    temp = CACHE_ERROR;
-  } else {
-    if (cparams>0) {
-      path[cparams] = '\0';
-    }
-    cache_pth = path;
-    pth = 1;
-  }
-  if(0 == temp) {
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &path, &cparams) == FAILURE)
+  {
     RETURN_FALSE;
-  } RETURN_TRUE;
+  }
+
+  if (cparams>0)
+  {
+    path[cparams] = '\0';
+  }
+
+  cache_pth = path;
+  pth = 1;
+  
+  RETURN_TRUE;
 }
 
 PHP_FUNCTION(cach_connect)
@@ -126,99 +138,122 @@ PHP_FUNCTION(cach_connect)
   char *username, *password;
   CACHE_STR pusername, ppassword, pexename;
 
-  if (0 == pth) {
+  if (0 == pth)
+  {
     cache_pth = zend_ini_string("cach.shdir", strlen("cach.shdir"), 0);
   }
-  if (CACHE_SUCCESS != (errno = CacheSetDir(cache_pth))) {
+  
+  errno = CacheSetDir(cache_pth);
+  if (CACHE_SUCCESS != errno)
+  {
     __on_cache_error(errno);
-    res = CACHE_ERROR;
-  } else {
-    argument_count = ZEND_NUM_ARGS();
-    if (0 == argument_count || 2 == argument_count || 3 == argument_count) {
-      strcpy((char *) pexename.str,"php");
-      pexename.len = (unsigned short)strlen((char *) pexename.str);
-      if (0 == argument_count) {
-        username = zend_ini_string("cach.login", strlen("cach.login"), 0);
-        password = zend_ini_string("cach.password", strlen("cach.password"), 0);
-
-      } else if (2 == argument_count || 3 == argument_count) {
-
-        #if ZEND_MODULE_API_NO <= 20131226
-          zval **args[3];
-          if(zend_get_parameters_array_ex(argument_count, args) != SUCCESS) {
-            cache_errno = CACHE_INVALID_PARAMETERS;
-            res = CACHE_ERROR;
-          } else {
-            if (PZVAL_IS_REF(*args[2])) {
-              cache_errno = CACHE_INVALID_PARAMETERS;
-              res = CACHE_ERROR;
-            } else {
-              if(IS_LONG == Z_TYPE_PP(args[2])) {
-                tout = Z_LVAL_PP(args[2]);
-              } else {
-                php_error(E_WARNING, "%s(): invalid parameters type", get_active_function_name(TSRMLS_C));
-              }
-            }
-          }
-        #else
-          zval args[3];
-          if(zend_get_parameters_array_ex(argument_count, args) != SUCCESS) {
-            cache_errno = CACHE_INVALID_PARAMETERS;
-            res = CACHE_ERROR;
-          } else {
-            if(IS_STRING == Z_TYPE(args[0])) {
-              username = Z_STRVAL(args[0]);
-            } else {
-              php_error(E_WARNING, "%s(): invalid parameters type", get_active_function_name(TSRMLS_C));
-            }
-            if(IS_STRING == Z_TYPE(args[1])) {
-              password = Z_STRVAL(args[1]);
-            } else {
-              php_error(E_WARNING, "%s(): invalid parameters type", get_active_function_name(TSRMLS_C));
-            } 
-            if (3 == argument_count) {
-              if(IS_LONG == Z_TYPE(args[2])) {
-                tout = Z_LVAL(args[2]);
-              } else {
-                php_error(E_WARNING, "%s(): invalid parameters type", get_active_function_name(TSRMLS_C));
-              }
-            }
-          }
-        #endif
-      }
-
-      strcpy((char *) pusername.str, username);
-      pusername.len = strlen(pusername.str);
-
-      strcpy((char *) ppassword.str, password);
-      ppassword.len = strlen(ppassword.str);
-      if (res) {
-        /* CACHE_PROGMODE т.к в случае ошибки соединение обрывается и не работает CacheError,
-        CACHE_TTNONE чтобы не перехватывало I/O */
-        if (CACHE_SUCCESS != (errno = CacheSecureStart(&pusername,&ppassword,&pexename,CACHE_PROGMODE|CACHE_TTNONE,tout,NULL,NULL))) {
-          __on_cache_error(errno);
-          res = CACHE_ERROR;
-        }
-      }
-    } else {
-      php_error(E_WARNING, "%s(): invalid number of parameters", get_active_function_name(TSRMLS_C));
-    }
-  }
-
-  if(0 == res) {
     RETURN_FALSE;
   }
 
-  RETURN_TRUE;
+  argument_count = ZEND_NUM_ARGS();
+
+  if ((argument_count == 1) || (argument_count > 3))
+  {
+    php_error(E_WARNING, "%s(): invalid number of parameters", get_active_function_name(TSRMLS_C));
+    RETURN_FALSE;
+  }
+
+  strcpy((char *) pexename.str,"php");
+  pexename.len = (unsigned short)strlen((char *) pexename.str);
+  if (0 == argument_count)
+  {
+    username = zend_ini_string("cach.login", strlen("cach.login"), 0);
+    password = zend_ini_string("cach.password", strlen("cach.password"), 0);
+  }
+  else if (2 == argument_count || 3 == argument_count)
+  {
+    #if ZEND_MODULE_API_NO <= 20131226
+    zval **args[3];
+    if(zend_get_parameters_array_ex(argument_count, args) != SUCCESS)
+    {
+      cache_errno = CACHE_INVALID_PARAMETERS;
+      RETURN_FALSE;
+    }
+ 
+    if (PZVAL_IS_REF(*args[2]))
+    {
+      cache_errno = CACHE_INVALID_PARAMETERS;
+      RETURN_FALSE;
+    }
+
+    if(IS_LONG == Z_TYPE_PP(args[2]))
+    {
+      tout = Z_LVAL_PP(args[2]);
+    }
+    else
+    {
+      //php_error(E_WARNING, "%s(): invalid parameters type", get_active_function_name(TSRMLS_C));
+      PHP_WARNING("invalid parameters type");
+    }
+    // PHP 7.0
+    #else
+    zval args[3];
+
+    if(zend_get_parameters_array_ex(argument_count, args) != SUCCESS)
+    {
+      cache_errno = CACHE_INVALID_PARAMETERS;
+      RETURN_FALSE;
+    }
+
+    if (IS_STRING != Z_TYPE(args[0]))
+    {
+      php_error(E_WARNING, "%s(): invalid login parameter type", get_active_function_name(TSRMLS_C));
+      RETURN_FALSE;
+    }
+
+    if (IS_STRING != Z_TYPE(args[1]))
+    {
+      php_error(E_WARNING, "%s(): invalid password parameter type", get_active_function_name(TSRMLS_C));
+      RETURN_FALSE;
+    }
+
+    username = Z_STRVAL(args[0]);
+    password = Z_STRVAL(args[1]);
+
+    if (3 == argument_count)
+    {
+      if(IS_LONG != Z_TYPE(args[2]))
+      {
+        php_error(E_WARNING, "%s(): invalid parameters type", get_active_function_name(TSRMLS_C));
+        RETURN_FALSE;
+      }
+
+      tout = Z_LVAL(args[2]);
+    }
+    #endif
+  }
+
+  strcpy((char *) pusername.str, username);
+  pusername.len = strlen(pusername.str);
+
+  strcpy((char *) ppassword.str, password);
+  ppassword.len = strlen(ppassword.str);
+
+  /* CACHE_PROGMODE т.к в случае ошибки соединение обрывается и не работает CacheError,
+     CACHE_TTNONE чтобы не перехватывало I/O */
+  errno = CacheSecureStart(&pusername,&ppassword,&pexename,CACHE_PROGMODE|CACHE_TTNONE,tout,NULL,NULL);
+
+  if (CACHE_SUCCESS == errno)
+    RETURN_TRUE;
+
+  __on_cache_error(errno);
+  RETURN_FALSE;
 }
 
 PHP_FUNCTION(cach_quit)
 {
   int res = CacheEnd();
-  if (CACHE_SUCCESS != res) __on_cache_error(errno);
-  if(0 != res) {
-    RETURN_FALSE;
-  } RETURN_TRUE;
+
+  if (CACHE_SUCCESS == res)
+    RETURN_TRUE;
+
+  __on_cache_error(errno);
+  RETURN_FALSE;
 }
 
 /*
@@ -233,8 +268,7 @@ static int __push_zval(zval* value)
   switch (Z_TYPE_P(value))
   {
     case IS_NULL:
-      cache_errno = NULL_EXCEPTION;
-      cache_error = "Null exception";
+      PHP_WARNING("one of params is NULL");
       return CACHE_ERROR;
       break;
 
@@ -247,8 +281,7 @@ static int __push_zval(zval* value)
       break;
 
     default:
-      php_error(E_WARNING, "%s(): one of param has wrong type", get_active_function_name(TSRMLS_C));
-      errno = CACHE_INVALID_PARAMETERS;
+      PHP_WARNING("one of param has wrong type");
       return CACHE_ERROR;
   }
 
@@ -263,6 +296,7 @@ static int __push_zval(zval* value)
     #endif
 
     case IS_LONG:
+      //php_printf("PUSH Int64 %d\n", Z_LVAL_P(value));
       if (CACHE_SUCCESS != (errno = CachePushInt64(Z_LVAL_P(value)))) {
         __on_cache_error(errno);
         res = CACHE_ERROR;
@@ -270,6 +304,7 @@ static int __push_zval(zval* value)
       break;
 
     case IS_DOUBLE:
+      //php_printf("PUSH Double %f\n", Z_DVAL_P(value));
       if (CACHE_SUCCESS != (errno = CachePushDbl(Z_DVAL_P(value)))) {
         __on_cache_error(errno);
         res = CACHE_ERROR;
@@ -277,6 +312,7 @@ static int __push_zval(zval* value)
       break;
 
     case IS_STRING:
+      //php_printf("PUSH String %s\n", Z_STRVAL_P(value));
       if (CACHE_SUCCESS != CachePushStr(Z_STRLEN_P(value),Z_STRVAL_P(value))) {
         __on_cache_error(errno);
         res = CACHE_ERROR;
@@ -287,7 +323,8 @@ static int __push_zval(zval* value)
 }
 
 /*
-  Working with all function arguments
+  Working with all function arguments.
+  RETURN: CACHE_ERROR or CACHE_NO_ERROR
 */
 static int __push_pp_global(int argument_count)
 {
@@ -296,6 +333,7 @@ static int __push_pp_global(int argument_count)
   HashTable *ht;
   char *name, *new_name;
   int name_len, errno, res = CACHE_NO_ERROR;
+
   // "z|" - only one required parameter, next are optional
   if (zend_parse_parameters(1, "z|", &one) == FAILURE)
   {
@@ -304,7 +342,7 @@ static int __push_pp_global(int argument_count)
 
   if (1 > argument_count || 30 < argument_count)
   {
-    php_error(E_WARNING, "%s(): invalid number of parameters", get_active_function_name(TSRMLS_C));
+    PHP_WARNING("invalid numbers of parameters");
     return CACHE_ERROR;
   }
 
@@ -319,7 +357,8 @@ static int __push_pp_global(int argument_count)
     return CACHE_ERROR;
   }
 
-  if ((0 != (errno = CachePushGlobal(name_len,new_name))))
+  errno = CachePushGlobal(name_len, new_name);
+  if (CACHE_SUCCESS != errno)
   {
     __on_cache_error(errno);
     return CACHE_ERROR;
@@ -336,7 +375,7 @@ static int __push_pp_global(int argument_count)
       return CACHE_ERROR;
     }
 
-    if(!(res = __push_zval(*args[counter])))
+    if (CACHE_ERROR == __push_zval(*args[counter]))
       return CACHE_ERROR;
   }
 
@@ -345,9 +384,7 @@ static int __push_pp_global(int argument_count)
   zval args[30];
   if(zend_get_parameters_array_ex(argument_count, args) != SUCCESS)
   {
-    sprintf(fl, "%s(): invalid parameters", get_active_function_name(TSRMLS_C));
-    cache_error = &fl[0];
-    cache_errno = CACHE_INVALID_PARAMETERS;
+    PHP_WARNING("invalid parameters");
     return CACHE_ERROR;
   }
 
@@ -357,8 +394,7 @@ static int __push_pp_global(int argument_count)
     name = Z_STRVAL(args[0]);
     if (name[0] != '^')
     {
-      php_error(E_WARNING, "%s(): the character \"^\" was not specified", get_active_function_name(TSRMLS_C));
-      errno = CACHE_INVALID_LOCAL;
+      PHP_WARNING("the character \"^\" was not specified");
       return CACHE_ERROR;
     }
     // rewind pointer, skip ^
@@ -366,20 +402,20 @@ static int __push_pp_global(int argument_count)
     name_len = strlen(new_name);
 
     // Select Global for operation
-    if (0 != CachePushGlobal(name_len, new_name))
+    if (CACHE_SUCCESS != CachePushGlobal(name_len, new_name))
     {
       __on_cache_error(errno);
       return CACHE_ERROR;
     }
   }
+  // If first argument is a array.
   else if (IS_ARRAY == Z_TYPE(args[0]))
   {
     ht = Z_ARRVAL(args[0]);
 
     if (zend_hash_num_elements(ht) == 0)
     {
-      php_error(E_WARNING, "%s(): first array argument cannot be empty", get_active_function_name(TSRMLS_C));
-      errno = CACHE_INVALID_PARAMETERS;
+      PHP_WARNING("first array argument cannot be empty");
       return CACHE_ERROR;
     }
 
@@ -387,20 +423,19 @@ static int __push_pp_global(int argument_count)
 
     ZEND_HASH_FOREACH_VAL(ht, one)
     {
+      // First element in array is global name.
       if (i==0)
       {
         if (IS_STRING != Z_TYPE_P(one))
         {
-          php_error(E_WARNING, "%s(): first element in global array must be string", get_active_function_name(TSRMLS_C));
-          errno = CACHE_INVALID_PARAMETERS;
+          PHP_WARNING("first element in global array must be string");
           return CACHE_ERROR;
         }
 
         name = Z_STRVAL_P(one);
         if (name[0] != '^')
         {
-          php_error(E_WARNING, "%s(): the character \"^\" was not specified in first global array element", get_active_function_name(TSRMLS_C));
-          errno = CACHE_INVALID_LOCAL;
+          PHP_WARNING("the character \"^\" was not specified in first global array element");
           return CACHE_ERROR;
         }
 
@@ -409,12 +444,13 @@ static int __push_pp_global(int argument_count)
         name_len = strlen(new_name);
 
         // Select Global for operation
-        if (0 != CachePushGlobal(name_len, new_name))
+        if (CACHE_SUCCESS != CachePushGlobal(name_len, new_name))
         {
           __on_cache_error(errno);
           return CACHE_ERROR;
         }
       }
+      // Working with subscripts in array
       else
       {
         switch (Z_TYPE_P(one))
@@ -424,15 +460,12 @@ static int __push_pp_global(int argument_count)
           case IS_LONG:
             break;
           default:
-            php_error(E_WARNING, "%s(): %d element in global array has wrong type", get_active_function_name(TSRMLS_C), i);
-            errno = CACHE_INVALID_PARAMETERS;
+            php_error(E_WARNING, "%s(): %d element in global array has wrong type %d", get_active_function_name(TSRMLS_C), i, Z_TYPE_P(one));
             return CACHE_ERROR;
         }
 
-        res = __push_zval(one);
-
         // FIXME only 1 type error
-        if(!res) 
+        if (CACHE_ERROR == __push_zval(one))
           return CACHE_ERROR;
       }
       i++;
@@ -444,71 +477,82 @@ static int __push_pp_global(int argument_count)
 
   for (;counter < argument_count; counter++)
   {
-    res = __push_zval(&args[counter]);
-    if(!res)
-      break;
+    if (CACHE_ERROR == __push_zval(&args[counter]))
+      return CACHE_ERROR;
   }
 
-  return res;
+  return CACHE_NO_ERROR;
 }
 
+/*
+  RETURN zval(LONG, STRING, DOUBLE) or NULL (on error)
+*/
 static zval __pop_cache()
 {
-  zval return_value;
-  int iTemp;
+  zval res;
+  int iTemp, nType;
   double dTemp;
   Callin_char_t *sPTemp;
-  switch (CacheType()) {
+
+  // Undocumented feature. We known type argument in stack with function CacheType designed for CacheEval[xxx]
+  nType = CacheType();
+
+  switch (nType)
+  {
+    // I don't see this type in stack
     case CACHE_INT:
-      if(0 != (errno = CachePopInt(&iTemp))) {
+      errno = CachePopInt(&iTemp);
+      if(CACHE_SUCCESS != errno)
+      {
         __on_cache_error(errno);
-        ZVAL_LONG(&return_value, CACHE_ERROR);
-      } else {
-        ZVAL_LONG(&return_value, iTemp);
+        ZVAL_NULL(&res);
+        break;
       }
+
+      ZVAL_LONG(&res, iTemp);
       break;
 
-    case CACHE_IEEE_DBL: //Function "CachePopIEEEDbl" is missing
+    case CACHE_IEEE_DBL:
       /* fall-through */
+      //Function "CachePopIEEEDbl" is missing
+
+    // CACHE_DOUBLE == 2 (REALLY USED)
     case CACHE_DOUBLE:
-      if(0 != (errno = CachePopDbl(&dTemp))) {
+      errno = CachePopDbl(&dTemp);
+      if(CACHE_SUCCESS != errno)
+      {
         __on_cache_error(errno);
-        ZVAL_LONG(&return_value, CACHE_ERROR);
-      } else {
-        ZVAL_DOUBLE(&return_value, dTemp);
+        ZVAL_NULL(&res);
+        break;
       }
+
+      ZVAL_DOUBLE(&res, dTemp);
       break;
 
+    // I don't see this type in stack
     case CACHE_ASTRING:
-      /* fall-through */
+    /* fall-through */
+    // In most cases - 15 (REALLY USED). Only return type for CacheGlobalOrder.
     case CACHE_WSTRING:
-      if(0 != (errno = CachePopStr(&iTemp, &sPTemp))) {
+      errno = CachePopStr(&iTemp, &sPTemp);
+      if(CACHE_SUCCESS != errno)
+      {
         __on_cache_error(errno);
-        ZVAL_LONG(&return_value, CACHE_ERROR);
-      } else {
-        sPTemp[iTemp] = '\0';
-        char* endptr;
-        sPTemp[iTemp]='\0';
-        if (0 != iTemp) {
-          iTemp = strtoimax(sPTemp, &endptr, 10);
-          if (0 == strlen(endptr)) {
-            ZVAL_LONG(&return_value,iTemp);
-          } else {
-            _ZVAL_STRING(&return_value, sPTemp);
-          }
-        } else {
-          ZVAL_NULL(&return_value);
-        }
+        ZVAL_NULL(&res);
+
+        break;
       }
+      sPTemp[iTemp] = '\0';
+      ZVAL_STRINGL(&res, sPTemp, iTemp);
       break;
 
     default:
-      cache_errno = WRONG_DATA_TYPE;
-      cache_error = "Wrong data type";
-      ZVAL_LONG(&return_value, CACHE_ERROR);
+      PHP_WARNING("Unsupported data type %d in Cache stack");
+      php_printf("Unsupported type %d\n", nType);
+      ZVAL_NULL(&res);
       break;
   }
-  return return_value;
+  return res;
 }
 
 /*
@@ -517,26 +561,23 @@ static zval __pop_cache()
 */
 static int __received_parameters_count(int argc)
 {
-  char fl[255];
   zval args[30], *new_value;
+
+  // This error processing in push_global
   if(zend_get_parameters_array_ex(argc, args) != SUCCESS)
   {
-    sprintf(fl, "%s(): invalid parameters", get_active_function_name(TSRMLS_C));
-    cache_error = &fl[0];
-    cache_errno = CACHE_INVALID_PARAMETERS;
-    argc = 0;
+    return 0;
   }
-  else
+  
+  if (IS_ARRAY == Z_TYPE(args[0]))
   {
-    if (IS_ARRAY == Z_TYPE(args[0]))
+    argc--;
+    ZEND_HASH_FOREACH_VAL(Z_ARRVAL(args[0]), new_value)
     {
-      argc--;
-      ZEND_HASH_FOREACH_VAL(Z_ARRVAL(args[0]), new_value)
-      {
-        argc++;
-      } ZEND_HASH_FOREACH_END();
-    }
+      argc++;
+    } ZEND_HASH_FOREACH_END();
   }
+
   return argc;
 }
 
@@ -552,18 +593,14 @@ PHP_FUNCTION(cach_set)
     RETURN_FALSE;
   }
 
-  if (res = __push_pp_global(argc))
-  {
-    // CacheGlobalSet has argument: Count of substript in stack
-    if (0 != (errno = CacheGlobalSet(__received_parameters_count(argc)-2)))
-    {
-      __on_cache_error(errno);
-      RETURN_FALSE;
-    }
-  }
+  if (CACHE_ERROR == __push_pp_global(argc))
+    RETURN_FALSE;
 
-  if(res == CACHE_ERROR)
+  // CacheGlobalSet has argument: Count of substript in stack
+  errno = CacheGlobalSet(__received_parameters_count(argc)-2);
+  if (CACHE_SUCCESS != errno)
   {
+    __on_cache_error(errno);
     RETURN_FALSE;
   }
 
@@ -573,125 +610,174 @@ PHP_FUNCTION(cach_set)
 PHP_FUNCTION(cach_get)
 {
   int errno, flag = 0, res, argc = ZEND_NUM_ARGS();
-  if (res = __push_pp_global(argc)) {
-    if (0 != (errno = CacheGlobalGet(__received_parameters_count(argc)-1,flag))) {
-      if (errno == CACHE_ERUNDEF) {
-        RETURN_NULL();
-      }
-      __on_cache_error(errno);
-      res = CACHE_ERROR;
-    } else {
-      zval ret = __pop_cache();
-      RETURN_ZVAL(&ret,1,1);
+
+  if (CACHE_ERROR  == __push_pp_global(argc))
+    RETURN_FALSE;
+  
+  errno = CacheGlobalGet(__received_parameters_count(argc)-1,flag);
+  if (CACHE_SUCCESS != errno)
+  {
+    // Node value is undefined
+    if (errno == CACHE_ERUNDEF)
+    {
+      RETURN_NULL();
     }
+
+    __on_cache_error(errno);
+    RETURN_FALSE;
   }
-  RETURN_FALSE;
+
+  zval ret = __pop_cache();
+
+  if (IS_NULL == Z_TYPE(ret))
+    RETURN_FALSE;
+  
+  RETURN_ZVAL(&ret,1,1);
 }
 
 PHP_FUNCTION(cach_zkill)
 {
   int errno, res, argc = ZEND_NUM_ARGS();
-  if (res = __push_pp_global(argc)) {
-    if (0 != (errno = CacheGlobalKill(__received_parameters_count(argc)-1,1))) {
-      __on_cache_error(errno);
-      res = CACHE_ERROR;
-    }
-  }
-  if(0 == res) {
+
+  if (CACHE_ERROR == __push_pp_global(argc))
     RETURN_FALSE;
-  } RETURN_TRUE;
+
+  errno = CacheGlobalKill(__received_parameters_count(argc)-1,1);
+  if (CACHE_SUCCESS != errno)
+  {
+    __on_cache_error(errno);
+    RETURN_FALSE;
+  }
+
+  RETURN_TRUE;
 }
 
 PHP_FUNCTION(cach_kill)
 {
   int errno, res, argc = ZEND_NUM_ARGS();
-  if (res = __push_pp_global(argc)) {
-    if(0 != (errno = CacheGlobalKill(__received_parameters_count(argc)-1,0))) {
-      __on_cache_error(errno);
-      res = CACHE_ERROR;
-    }
-  }
-  if(0 == res) {
+
+  if (CACHE_ERROR == __push_pp_global(argc))
     RETURN_FALSE;
-  } RETURN_TRUE;
+  
+  errno = CacheGlobalKill(__received_parameters_count(argc)-1,0);
+  if(CACHE_SUCCESS != errno) 
+  {
+    __on_cache_error(errno);
+    RETURN_FALSE;
+  }
+
+  RETURN_TRUE;
 }
 
 PHP_FUNCTION(cach_order)
 {
   int errno, res, argc = ZEND_NUM_ARGS();
-  if (res = __push_pp_global(argc)) {
-    if (0 != (errno = CacheGlobalOrder(__received_parameters_count(argc)-1,1,0))) {
-      __on_cache_error(errno);
-      res = CACHE_ERROR;
-    } else {
-      zval ret = __pop_cache();
-      RETURN_ZVAL(&ret,1,1);
-    }
+
+  if (CACHE_ERROR == __push_pp_global(argc))
+    RETURN_FALSE;
+
+  errno = CacheGlobalOrder(__received_parameters_count(argc)-1,1,0);
+  if (CACHE_SUCCESS != errno)
+  {
+    __on_cache_error(errno);
+    RETURN_FALSE;
   }
-  RETURN_NULL();
+
+  zval ret = __pop_cache();
+  
+  if (IS_NULL == Z_TYPE(ret))
+    RETURN_FALSE;
+ 
+  if (
+    (IS_STRING == Z_TYPE(ret)) &&
+    (0 == Z_STRLEN(ret)) 
+  )
+    RETURN_NULL();
+
+  RETURN_ZVAL(&ret,1,1);
 }
 
 PHP_FUNCTION(cach_order_rev)
 {
   int errno, res, argc = ZEND_NUM_ARGS();
-  if (res = __push_pp_global(argc)) {
-    if(0 != (errno = CacheGlobalOrder(__received_parameters_count(argc)-1,-1,0))) {
-      __on_cache_error(errno);
-      res = CACHE_ERROR;
-    } else {
-      zval ret = __pop_cache();
-      RETURN_ZVAL(&ret,1,1);
-    }
+
+  if (CACHE_ERROR == __push_pp_global(argc))
+    RETURN_FALSE;
+
+  errno = CacheGlobalOrder(__received_parameters_count(argc)-1,-1,0);
+  if (CACHE_SUCCESS != errno)
+  {
+    __on_cache_error(errno);
+    RETURN_FALSE;
   }
-  RETURN_NULL();
+
+  zval ret = __pop_cache();
+  
+  if (IS_NULL == Z_TYPE(ret))
+    RETURN_FALSE;
+
+  if (
+    (IS_STRING == Z_TYPE(ret)) && (0 == Z_STRLEN(ret)) 
+  )
+    RETURN_NULL();
+  
+  RETURN_ZVAL(&ret,1,1);
 }
+
+static int __parse_query_res(zval* a, char* s, size_t len);
 
 PHP_FUNCTION(cach_query)
 {
-  int count = 0, errno, res, argc = ZEND_NUM_ARGS();
-  if (res = __push_pp_global(argc)) {
-    if (CACHE_SUCCESS != CachePushStr(0,"")) {
-      __on_cache_error(errno);
-      res = CACHE_ERROR;
-    } else  {
-      char fl[255];
-      zval args[30], *new_value;
-      if(zend_get_parameters_array_ex(argc, args) != SUCCESS) {
-        sprintf(fl, "%s(): invalid parameters", get_active_function_name(TSRMLS_C));
-        cache_error = &fl[0];
-        cache_errno = CACHE_INVALID_PARAMETERS;
-        res = CACHE_ERROR;
-      } else {
-        count = __received_parameters_count(argc);
-        if(0 != (errno = CacheGlobalOrder(count,1,0))) {
-          __on_cache_error(errno);
-          res = CACHE_ERROR;
-        } else {
-          zval myArray, ret = __pop_cache();
-          if (IS_LONG == Z_TYPE(ret)) {
-            if (0 == (Z_LVAL(ret))) {
-              RETURN_NULL();
-            }
-          }
-          array_init(&myArray);
-          int counter = 0;
-          if ((1 == argc) && (IS_ARRAY == Z_TYPE(args[0]))) {
-            ZEND_HASH_FOREACH_VAL(Z_ARRVAL(args[0]), new_value) {
-              add_next_index_zval(&myArray, new_value);
-            } ZEND_HASH_FOREACH_END();
+  int count = 0, errno, argc = ZEND_NUM_ARGS();
+  zval args[30], *new_value;
 
-          } else {
-            for (counter = 0; counter < argc; counter++) {
-              add_index_zval(&myArray, counter, &args[counter]);
-            }
-          }
-          add_index_zval(&myArray, count, &ret);
-          RETURN_ZVAL(&myArray,1,1);
-        }
-      }
-    }
+  // Push arguments to Cache stack.
+  if (CACHE_ERROR == __push_pp_global(argc))
+    RETURN_FALSE;
+
+/*
+  if (CACHE_SUCCESS != CachePushStr(0,""))
+  {
+    __on_cache_error(errno);
+    RETURN_FALSE;
   }
-  RETURN_NULL();
+*/
+
+  // Loading arguments in args array
+  if(zend_get_parameters_array_ex(argc, args) != SUCCESS)
+  {
+    PHP_WARNING("invalid parameters");
+    RETURN_FALSE;
+  }
+
+  // Real arguments count (in array arguments also counting)
+  count = __received_parameters_count(argc);
+
+  // Elements in stack = count - 1
+  errno = CacheGlobalQuery(count-1, 1, 0);
+
+  if(CACHE_SUCCESS != errno)
+  {
+    __on_cache_error(errno);
+    RETURN_FALSE;
+  }
+
+  zval res, ret;
+  res = __pop_cache();
+
+  if (IS_STRING != Z_TYPE(res))
+    RETURN_FALSE;
+
+  // We reached full traverse?
+  if (0 == Z_STRLEN(res))
+    RETURN_NULL();
+
+  array_init(&ret);
+
+  // Parsing string
+  __parse_query_res(&ret, Z_STRVAL(res), Z_STRLEN(res));
+
+  RETURN_ZVAL(&ret,1,1);
 }
 
 PHP_FUNCTION(cach_exec)
@@ -699,20 +785,23 @@ PHP_FUNCTION(cach_exec)
   char *command_str;
   int res = CACHE_NO_ERROR;
   strsize_t command_len;
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &command_str, &command_len) == FAILURE) { 
-    res = CACHE_ERROR;
-  } else {
-    CACHE_STR command;
-    strcpy((char *) command.str,command_str);
-    command.len = command_len;
-    if (0 != (errno = CacheExecute(&command))) {
-      __on_cache_error(errno);
-      res = CACHE_ERROR;
-    }
-  }
-  if(0 == res) {
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &command_str, &command_len) == FAILURE)
+  { 
     RETURN_FALSE;
-  } RETURN_TRUE;
+  }
+
+  CACHE_STR command;
+  strcpy((char *) command.str,command_str);
+  command.len = command_len;
+  
+  errno = CacheExecute(&command);
+  if (CACHE_SUCCESS != errno)
+  {
+      __on_cache_error(errno);
+      RETURN_FALSE;
+  }
+  
+  RETURN_TRUE;
 }
 
 PHP_FUNCTION(cach_errno)
@@ -723,4 +812,117 @@ PHP_FUNCTION(cach_errno)
 PHP_FUNCTION(cach_error)
 {
   _RETURN_STRING(cache_error);
+}
+
+static void __word(zval* a, char* s, size_t len)
+{
+  add_next_index_stringl(a, s, len);
+}
+
+static void __digit(zval* a, char* s, int len)
+{
+  zval temp;
+
+  ZVAL_STRINGL(&temp, s, len);
+  // No "." or "Е" - it's LONG
+  if (
+   (strchr(s, '.')==NULL) && (strchr(s, 'E')==NULL)
+  )
+  {
+    convert_to_long(&temp);
+  }
+  else
+  {
+    convert_to_double(&temp);
+  }
+  add_next_index_zval(a, &temp);
+}
+
+// Parsing '^a("dfsdf",44,"value")'
+static int __parse_query_res(zval* a, char* s, size_t len)
+{
+  size_t i=0, bS = 0, pos = 0;
+  char buf[len+1];
+  char* p;
+
+  // Search global name.
+  p = strchr(s, '(');
+  if (p == NULL)
+  {
+    __word(a, s, len);
+    return CACHE_NO_ERROR;
+  }
+
+  // add global
+  __word(a, s, p-s);
+
+  // len - begin^( -end)
+  len = len-(p-s+1)-1;
+  s = p+1;
+
+  new_etap:
+
+  pos = 0;
+  bS = 0;
+
+  while (i < len)
+  {
+    // Number pasing
+    if (bS==0)
+    {
+      if (s[i] == '"')
+      {
+        bS=1;
+        i++;
+        continue;
+      }
+
+      buf[pos] = s[i];
+      pos++;
+
+      if ((i + 1) == len)
+      {
+        __digit(a, buf, pos);
+        break;
+      }
+  
+      if (s[i+1] == ',')
+      {
+        __digit(a, buf, pos);
+        i = i + 2;
+        goto new_etap;
+      }
+      i++;
+      continue;
+    }
+    // Word parsing
+    else
+    {
+      if (s[i] == '"')
+      {
+        if ((i + 1) == len)
+        {
+          __word(a, buf, pos);
+          break;
+        }
+
+        if (s[i+1] == ',')
+        {
+          __word(a, buf, pos);
+
+          i = i + 2;
+          goto new_etap;
+        }
+
+        if (s[i+1]=='"')
+        {
+          i++;
+        }
+      }
+      buf[pos] = s[i];
+      pos++;
+      i++;
+    }
+  }
+  return CACHE_NO_ERROR;
 }
