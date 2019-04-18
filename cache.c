@@ -1,5 +1,7 @@
 /*
-  For commercial support, adding new features and tuning available.
+  PHP-extension "cach" for integration with InterSystems Cache and Iris.
+  
+  Commercial support, adding new features and tuning also available.
   Sergey Kamenev cacher13@inetstar.ru
 */
 #ifdef HAVE_CONFIG_H
