@@ -1,3 +1,7 @@
+/*
+  For commercial support, adding new features and tuning available.
+  Sergey Kamenev cacher13@inetstar.ru
+*/
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
