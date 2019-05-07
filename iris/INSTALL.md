@@ -15,7 +15,7 @@ You able build your module or use our precompiled module *iris.so* for various v
 2. execute command `phpize` from php disribution
 3. `./configure --with-path=[DIR]`
    DIR - path to Iris lib directory or directly to lbirisdbt.so
-   example: ./configure --with-path=/usr/irissys/bin/lbirisdbt.so
+   example: ./configure --with-path=/usr/irissys/bin
 4. `make`
 5. `make install`
 
@@ -68,13 +68,15 @@ For example:
 2. выполните команду `phpize`
 3. выполните команду `./configure --with-path=[DIR]`
    DIR - путь к Caché или напрямую к libirisdbt.so
-   например: ./configure --with-path=/usr/irissys/bin/libirisdbt.so
+   например: ./configure --with-path=/usr/irissys/bin
 4. выполните команду `make`
 5. выполните команду `make install`
 
 ## Настройка модуля
 
 1. для использования необходимо добавить в файл php.ini, например: extension=iris.so
+   Для ubuntu: Создать файл /etc/php/7.2/mods-available/iris.ini c текстом: extension=iris.so,
+   а потом создать на него символическую ссылку iris.so в папке /etc/php/7.2/mods-enabled.
 2. Включить интерфейс callin (в сервисах) и выбрать аутентификацию по пользователю и паролю в web-интерфейсе Iris.
 3. **ОБЯЗАТЕЛЬНО** выбрать "Startup namespace". Для этого вы можете использовать веб-интерфейс Caché (вкладка редактирования пользователей, поле "Startup Namespace") или php функцию.
 
