@@ -8,39 +8,44 @@ $sError = false;
 
 if (!isset($_SESSION['connected']) || (isset($_SESSION['connected']) && !$_SESSION['connected']))
 {
-  if (!(isset($_POST['submit']) && $_POST['submit']))
-    die('Please do not hack me!');
-
-  $ok = iris_set_dir($_POST['path']);
-  if ($ok) $ok = iris_connect($_POST['login'], $_POST['pass']);
-  if ($ok) 
+  if (isset($_POST['submit']) && $_POST['submit'])
   {
-    $_SESSION['connected'] = true;
-    $_SESSION['path'] = $_POST['path'];
-    $_SESSION['login'] = $_POST['login'];
-    $_SESSION['pass'] = $_POST['pass'];
+    $ok = iris_set_dir($_POST['path']);
+    
+    if ($ok)
+      $ok = iris_connect($_POST['login'], $_POST['pass']);
+    
+    if ($ok) 
+    {
+      $_SESSION['connected'] = true;
+      $_SESSION['path'] = $_POST['path'];
+      $_SESSION['login'] = $_POST['login'];
+      $_SESSION['pass'] = $_POST['pass'];
 
-    iris_exec('set ^IrisVer = $zv');
-    iris_exec('set ^IrisNS = $NAMESPACE');
+      iris_exec('set ^IrisVer = $zv');
+      iris_exec('set ^IrisNS = $NAMESPACE');
 
-    $_SESSION['IrisVer'] = iris_get('^IrisVer');
-    $_SESSION['IrisNS'] = iris_get('^IrisNS');
+      $_SESSION['IrisVer'] = iris_get('^IrisVer');
+      $_SESSION['IrisNS'] = iris_get('^IrisNS');
+    }
+    
+    if (!$ok)
+      $sError = 'Error: '.iris_error().' Code: '.iris_errno();
   }
-
-  if (!$ok)
-    $sError = 'Error: '.iris_error().' Code: '.iris_errno();
 }
 else
 {
   $ok = iris_set_dir($_SESSION['path']);
+  
   if ($ok)
   {
     $ok = iris_connect($_SESSION['login'], $_SESSION['pass']);
-    if (!$ok)
-    {
-      echo "Error in setting connection: ".iris_error()." code: ".iris_errno();
-      die();
-    }
+  }
+  
+  if (!$ok)
+  {
+    unset($_SESSION['connected']);
+    $sError = "Error in setting connection: ".iris_error()." code: ".iris_errno();
   }
 }
 
