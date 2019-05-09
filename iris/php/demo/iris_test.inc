@@ -49,7 +49,7 @@ else
   }
 }
 
-if ($_SESSION['connected'])
+if (isset($_SESSION['connected']) && $_SESSION['connected'])
 {
   if (isset($_POST['changeNS']) && $_POST['changeNS'] && isset($_POST['nmsp']) && $_POST['nmsp'])
   {
