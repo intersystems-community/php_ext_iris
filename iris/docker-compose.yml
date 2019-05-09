@@ -11,5 +11,5 @@ services:
     ports:
       - ${WEB_PORT}:80
       - ${IRIS_PORT}:52773
-volumes:
+    volumes:
       - ./php/demo:/var/www/html

@@ -44,9 +44,14 @@ For example:
   docker-compose build
   
   Запускаем контейнер-контейнер
-  docker run -d --publish 9091:51773 --publish 9092:52773 --publish 52080:80 --name diris_cont iris_iris:latest
+  docker-compose up -d
   
-  Настройка на основе докер-образа Iris или установленного Iris.
+  Тестируем демо-страницу на localhost:52080 в браузере.
+  
+  Останавливаем контейнер
+  docker-compose stop
+
+  * Настройка на основе докер-образа Iris или установленного Iris. *
   
   Устанавливаем Iris (или скачиваем готовый docker-контейнер)
   Скачать контейнер:
