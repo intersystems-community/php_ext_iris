@@ -40,8 +40,8 @@ zend_module_entry cache_module_entry = {
   cache_functions,
   PHP_MINIT(cache),
   PHP_MSHUTDOWN(cache),
-  PHP_RSHUTDOWN(cache),
   NULL,
+  PHP_RSHUTDOWN(cache),
   NULL,
 #if ZEND_MODULE_API_NO >= 20010901
   PHP_CACHE_VERSION,
