@@ -40,7 +40,15 @@ For example:
 Вы можете собрать самостоятельно модуль или использовать предкомпилированный из данного репозитория.
 
 ## Перед установкой
-1. Устанавливаем Iris (или скачиваем готовый docker-контейнер)
+1. Собираем свой образ в текущей папке:
+  docker-compose build
+  
+  Запускаем контейнер-контейнер
+  docker run -d --publish 9091:51773 --publish 9092:52773 --publish 52080:80 --name diris_cont iris_iris:latest
+  
+  Настройка на основе докер-образа Iris или установленного Iris.
+  
+  Устанавливаем Iris (или скачиваем готовый docker-контейнер)
   Скачать контейнер:
   https://hub.docker.com/_/intersystems-iris-data-platform/plans/222f869e-567c-4928-b572-eb6a29706fbd?tab=instructions
   
