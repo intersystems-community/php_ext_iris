@@ -151,7 +151,7 @@ function pRes($opt)
 
   switch ($_POST['opt'])
   {
-    case 'set':var_dump($a, $_POST['setVal']);
+    case 'set':
       $res = iris_set($a, $_POST['setVal']);
       break;
     case 'get':
