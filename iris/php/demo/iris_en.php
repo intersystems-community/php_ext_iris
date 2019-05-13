@@ -15,8 +15,8 @@ $_LANG = array(
   'th_test_param' => 'Parameters',
   'th_test_res' => 'Result, sec',
   
-  'caption_test_povtor' => 'Time of execution<br>cach_set N-time on same subscript with different values',
-  'caption_test_cicle'   => 'Time of execution<br>cach_set N-time in cicle by different subscripts',
+  'caption_test_povtor' => 'Testing Update<br>Run iris_set for the same subscript N times with different values',
+  'caption_test_cicle'   => 'Testing Insertion<br>Run iris_set in N cycle setting an incremental value into ^Global(value)=value',
   
   'change_namespace' => 'Change',
   'error_parameters' => 'Missing or wrong global name',

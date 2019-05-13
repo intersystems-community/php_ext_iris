@@ -15,8 +15,8 @@ $_LANG = array(
   'th_test_param' => 'Параметры',
   'th_test_res' => 'Результат',
   
-  'caption_test_povtor' => 'Время выполнения<br>cach_set N-раз по одному индексу разными значениями',
-  'caption_test_cicle'   => 'Время выполнения<br>cach_set N-раз в цикле по разным индексам',
+  'caption_test_povtor' => 'Время выполнения<br>iris_set N-раз по одному индексу разными значениями',
+  'caption_test_cicle'   => 'Время выполнения<br>iris_set N-раз в цикле по разным индексам',
   
   'change_namespace' => 'Сменить',
   'error_parameters' => 'Отсутствует или неправильно задано имя глобала',
