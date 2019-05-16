@@ -21,8 +21,8 @@ You able build your module or use our precompiled module *iris.so* for various v
 
 ## Setup module
 
-1. The most common way to load extension is to include it in your `php.ini` configuration file, example: `extension=cach.so`
-2. Enable interface callin (Service tab) and select login&password authentication type in Cache web interface.
+1. The most common way to load extension is to include it in your `php.ini` configuration file, example: `extension=iris.so`
+2. Enable interface callin (Service tab) and select login&password authentication type in IRIS web interface.
 3. **Necessarily** select "Startup namespace". You can use Caché WEB User Interface ("Users editing" tab, "Startup Namespace" field) or php function to do so.
 
 ### By default this php module uses empty namespace and using globals is unpossible.
