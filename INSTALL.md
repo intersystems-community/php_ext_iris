@@ -5,10 +5,44 @@ PHP Api Version shoul be > 20131106
 You able build your module or use our precompiled module *iris.so* for various version Intersystems Iris.
 
 ## Before install
-1. Install Iris
-2. Install `apache2`, `php` and `php-dev` packet by apt-get.
-`apt-get install apache2 php php-dev`
-3. Add iris user to web-users group by `usermod -a -G irisusr www-data` command
+1. Install IRIS & testing php demo-page (simpliest way)
+1(a). Build own IRIS docker-image in current folder:
+  `docker-compose build`
+  
+  Run IRIS-container
+  `docker-compose up -d`
+  
+  Testing php demo-page on localhost:52080 in browser.
+  
+  Stopping container
+  `docker-compose stop`
+  
+1(b). Manual setup with previsiously installed IRIS or on base official IRIS docker image
+  
+  Install Iris or setup oficial container.
+
+  Download official container:
+  https://hub.docker.com/_/intersystems-iris-data-platform/plans/222f869e-567c-4928-b572-eb6a29706fbd?tab=instructions
+  
+  Setup IRIS in container:
+  http://localhost:9092/csp/sys/UtilHome.csp
+
+  URL for creating DB in container:
+  http://localhost:9092/csp/sys/mgr/%25CSP.UI.Portal.Databases.zen
+
+  Create name space:
+  http://localhost:9092/csp/sys/mgr/%25CSP.UI.Portal.Namespaces.zen
+
+  Enable call-in service:
+  http://localhost:9092/csp/sys/sec/%25CSP.UI.Portal.Services.zen#
+
+  Create user, define namespace for user and grant access role %DB_%DEFAULT for user:
+  http://localhost:9092/csp/sys/sec/%25CSP.UI.Portal.Users.zen
+  
+  Installing packages `httpd`, `php` и `php-dev`.
+  Example for Ubuntu: `apt-get update && apt-get install apache2 php php-dev`
+
+  Adding user irisusr in web-data group `usermod -a -G irisusr www-data`
 
 ## Build & install
 1. `cd` in source dir
