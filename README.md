@@ -1,3 +1,5 @@
+For installation see [INSTALL.md file](INSTALL.md).
+
 # Function list
 
 **All functions (except *iris_get*) returns TRUE or FALSE if error occurs**
