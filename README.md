@@ -1,4 +1,4 @@
-For installation see [INSTALL.md file](INSTALL.md).
+For installation see [INSTALL.md](INSTALL.md) file.
 
 # Function list
 
